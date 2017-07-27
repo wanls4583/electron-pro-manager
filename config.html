@@ -1,0 +1,209 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="utf-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <title>修改密码</title> 
+<link href="css/base.css" rel="stylesheet">
+<style type="text/css">
+	.kv-content input,.kv-content a{
+		vertical-align: middle;
+		border-radius: 0;
+	}
+	.kv-content input{
+		width: 300px;
+	}
+	.kv-content a{
+		height: 25px;
+		line-height: 25px;
+		margin-left: 8px;
+	}
+</style>
+</head> 
+<body>
+    <div class="container">
+        <div id="inner-hd">
+            <div class="crumbs">
+				<i class="crumbs-arrow"></i>
+				<a href="javascript:;" class="crumbs-label">配置</a>
+			</div>
+        </div>
+
+        <div id="inner-bd">
+
+            <div class="button-group">
+		        <div class="button current add">
+		            <i class="iconfont">&#xe76a;</i>
+		            <span class="button-label">保存</span>
+		        </div>
+		        <div class="button reset">
+		            <i class="iconfont">&#xe603;</i>
+		            <span class="button-label">重置</span>
+		        </div>
+		    </div>
+			
+			<table class="kv-table">
+				<tbody>
+					<tr>
+						<td class="kv-label">
+							项目目录：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir rootDir">
+							<!-- <span class="text-tip">(modjs目录不能为空)</span> -->
+							<a href="javascript:void(0)" class="a-upload">选择文件</a>
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							modjs目录：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir modjsDir">
+							<!-- <span class="text-tip">(modjs目录不能为空)</span> -->
+							<a href="javascript:void(0)" class="a-upload">选择文件</a>
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							style目录：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir styleDir">
+							<!-- <span class="text-tip">(style目录不能为空)</span> -->
+							<a href="javascript:void(0)" class="a-upload">选择文件</a>
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							scss目录：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir scssDir">
+							<!-- <span class="text-tip">(scss目录不能为空)</span> -->
+							<a href="javascript:void(0)" class="a-upload">选择文件</a>
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							打开项目目录命令：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir openDirCmd">
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							打开文件命令：
+						</td>
+						<td class="kv-content" style="padding: 10px;">
+							<input type="text" class="dir openFileCmd">
+						</td>
+					</tr>
+				</tbody>
+				
+			</table>
+			
+			
+        </div>
+
+        <div id="inner-ft">
+            
+        </div>
+    </div>
+    <script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/lib/layer/layer.js"></script>
+	<script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript">
+    	var require = window.parent.require;
+    	var remote = require('electron').remote
+    	var fs = require('fs');
+    	var dialog = remote.dialog;
+    	var userName = $('.pf-user-name',window.parent.document).text();
+    	var datas = {};
+    	var initDatas = {};
+    	var config = {};
+    	config = {};
+    	//elctron里面不能用同步文件操作
+    	fs.exists(globalDatas.configFilePath, function(exists) {  
+		    if(exists){
+		    	fs.readFile(globalDatas.configFilePath,'UTF-8',function(err,data){
+					if(err){
+						layer.open({
+				    		title: '错误',
+				    		content: err,
+				    		btn:['确定']
+				    	});
+				    	return;
+					}
+					data && (datas = JSON.parse(data),initDatas = JSON.parse(data));
+					initData();
+					initEvt();
+				});
+		    }else{
+		    	initData();
+				initEvt();
+		    }
+		}); 
+
+    	function initData(){
+	    	if(initDatas[userName]){
+	    		var config = initDatas[userName];
+	    		$('.modjsDir').val(config.modjs);
+    			$('.styleDir').val(config.style);
+    			$('.scssDir').val(config.scss);
+    			$('.openDirCmd').val(config.openDirCmd);
+    			$('.openFileCmd').val(config.openFileCmd);
+    			$('.rootDir').val(config.rootDir);
+	    	}
+    	}
+    	
+    	function getData(){
+    		config.userName = userName;
+    		config.modjs = $('.modjsDir').val();
+	    	config.style = $('.styleDir').val();
+	    	config.scss = $('.scssDir').val();
+	    	config.rootDir = $('.rootDir').val();
+	    	config.openDirCmd = $('.openDirCmd').val();
+	    	config.openFileCmd = $('.openFileCmd').val();
+	    	datas[userName] = config; 
+	    	return datas;
+    	}
+    	
+    	function initEvt(){
+    		//保存
+    		$('.add').click(function(){
+	    		fs.writeFile(globalDatas.configFilePath, JSON.stringify(getData()), function(err) {
+				    if(err) {
+				        layer.open({
+				    		title: '错误',
+				    		content: err,
+				    		btn:['确定']
+				    	});
+				        return;
+				    }
+				    layer.open({
+			    		title: '成功',
+			    		content: '保存成功!',
+			    		btn:['确定']
+			    	});
+			    	initDatas = JSON.parse(JSON.stringify(getData()));
+				});
+	    	});
+	    	//复位
+	    	$('.reset').click(function(){
+	    		initData();
+	    	})
+	    	//选择文件
+	    	$('.a-upload').on('click',function(){
+	    		var This = this;
+	    		dialog.showOpenDialog({defaultPath:'e:/56/', properties: ['openDirectory']},
+	    			function(filename){
+	    				$(This).closest('.kv-content').find('.dir').val(filename);
+    				}
+    			);
+	    	})
+    	}
+    </script>
+</body> 
+</html>

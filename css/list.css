@@ -1,0 +1,56 @@
+.title a{color:#000;text-decoration:none}.title a:hover{text-decoration:underline}input[type="text"],textarea{width:530px}
+.op{
+	padding: 0 !important;
+	text-align: center !important;
+}
+td.op input,td.op .open{
+	position: relative;
+	display: inline-block;
+	height: 25px;
+	box-sizing: border-box;
+	line-height: 25px;
+	padding: 0 5px;
+	background-color: #f1f1f1;
+    border: 1px solid #c2c2c2;
+    border-radius: 2px;
+    color: #000;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+td.op .open{
+	width: 78px;
+}
+td.op input:hover,td.op .open:hover{
+	background-color: #0c9d72;
+	color: #fff;
+}
+td.op .open i{
+	font-size: 12px;
+	margin-right: 5px;
+}
+td.op .open ul{
+	width: 100%;
+	display: none;
+	position: absolute;
+	z-index: 1;
+	top: 23px;
+	left: -1px;
+	background: #fff;
+	border-radius: 0 0 2px 2px;
+	border: 1px solid #e1e1e1;
+    box-shadow: 1px 1px 2px #ddd;
+    text-align: left;
+    color: #000;
+}
+td.op .open:hover ul{
+	display: block;
+}
+td.op ul li{
+	padding: 0 10px;
+}
+td.op ul li:hover{
+	color: #fff;
+	background-color: #0c9d72;
+}

@@ -1,0 +1,531 @@
+﻿<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="utf-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <title>学习园地</title> 
+<link href="css/base.css" rel="stylesheet">
+<link href="css/list.css" rel="stylesheet">
+<style type="text/css">
+	.kv-content input,.kv-content a{
+		vertical-align: middle;
+		border-radius: 0;
+	}
+	.kv-content input{
+		width: 300px;
+	}
+	.kv-content a{
+		height: 25px;
+		line-height: 25px;
+		margin-left: 8px;
+	}
+</style>
+</head> 
+<body>
+    <div class="container">
+        <div id="inner-hd">
+            <div class="crumbs">
+				<i class="crumbs-arrow"></i>
+				<a href="javascript:;" class="crumbs-label">学习园地</a>
+			</div>
+        </div>
+
+        <div id="inner-bd">
+        	
+
+            <div class="button-group">
+		        <div class="button current add">
+		            <i class="iconfont">&#xe620;</i>
+		            <span class="button-label">添加</span>
+		        </div>
+		        <div class="button del">
+		            <i class="iconfont">&#xe609;</i>
+		            <span class="button-label">删除</span>
+		        </div>
+		    </div>
+			
+			<table class="grid">
+				<thead>
+					<tr>
+						<th class="grid-checkbox"><input class="all_cb" type="checkbox"></th>
+						<th >序号</th>
+						<th >专题名</th>
+						<th >wiki</th>
+						<th >目录名</th>
+						<th class="op"> 操作 </th>
+					</tr>
+				</thead>
+				
+				<tbody id="taskList">
+				</tbody>
+			</table>
+			
+			
+        </div>
+
+        <div id="inner-ft">
+            
+        </div>
+    </div>
+
+	<script type="text/template" id="addTpl">
+		<table class="kv-table">
+			<tbody>
+				<tr>
+					<td class="kv-label">
+						标题：
+					</td>
+					<td class="kv-content" style="padding: 10px;">
+						<input type="text" placeholder="标题" class="in_title">
+					</td>
+				</tr>
+				<tr>
+					<td class="kv-label">
+						目录名：
+					</td>
+					<td class="kv-content" style="padding: 10px;">
+						<input type="text" placeholder="目录名" class="in_dir">
+						<!-- <a href="javascript:void(0)" class="a-upload">选择文件</a> -->
+					</td>
+				</tr>
+				<tr>
+					<td class="kv-label">
+						wiki：
+					</td>
+					<td class="kv-content" style="padding: 10px;">
+						<input type="text" placeholder="wiki" class="in_wiki">
+						<!-- <a href="javascript:void(0)" class="a-upload">选择文件</a> -->
+					</td>
+				</tr>
+			</tbody>
+			
+		</table>
+	</script>
+	<script type="text/template" id="taskItem">
+		<tr>
+			<td class="grid-checkbox"><input class="item_cb" name="item_cb" type="checkbox"></td>
+			<td class="num"></td>
+			<td class="title"></td>
+			<td class="wiki"></td>
+			<td class="dir"></td>
+			<td class="op">
+				<input type="button" class="modify" value="修改">
+				<div class="open">
+					<i class="iconfont">&#xe618;</i><span>打开文件</span>
+					<ul>
+						<li class="op_html">index.html</li>
+						<li class="op_sc">index.scss</li>
+						<li class="op_cs">index.css</li>
+						<li class="op_js">js文件</li>
+						<li class="op_img">img目录</li>
+					</ul>
+				</div>
+			</td>
+		</tr>
+	</script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/lib/layer/layer.js"></script>
+	<script type="text/javascript" src="js/common.js"></script>
+
+	<script type="text/javascript">
+	var require = window.parent.require;
+	var remote = require('electron').remote
+	var fs = require('fs');
+	var dialog = remote.dialog;
+	var path = require("path");  
+	var shell = require('electron').shell;
+	var child_process = require('child_process');
+	var userName = $('.pf-user-name',window.parent.document).text();
+	var datas = {};
+	var userData = null;
+    var config = null;
+    var emptyFn = function(){};
+    var Util = {
+    	spawn : function(cmd,arg,options){
+    		var workerProcess = child_process.spawn(cmd,arg||{},options||{});
+
+			workerProcess.stdout.on('data', function (data) {
+			  console.log(cmd+' stdout: ' + data);
+			});
+
+			workerProcess.stderr.on('data', function (data) {
+			  console.log(cmd+' stderr: ' + data);
+			});
+			workerProcess.on('close', function (code) {
+			  console.log('子进'+cmd+'程已退出，退出码 '+code);
+			});
+			workerProcess.on('exit', function (code) {
+			  console.log('子进程'+cmd+'结束，结束码:'+code);
+			});
+			return workerProcess;
+    	},
+    	exec: function(cmd){
+    		var workerProcess = child_process.exec(cmd,function(error, stdout, stderr){
+    			 if (error) {
+				    console.error(cmd+' exec error:',error);
+				    return;
+				  }
+				  console.log(cmd+' stdout:',stdout);
+				  console.log(cmd+' stderr:',stderr);
+    		});
+    		workerProcess.on('close', function (code) {
+			  console.log('子进'+cmd+'程已退出，退出码 '+code);
+			});
+			workerProcess.on('exit', function (code) {
+			  console.log('子进程'+cmd+'结束，结束码:'+code);
+			});
+			return workerProcess;
+    	}
+    }
+	fs.exists(globalDatas.taskFilePath, function(exists) {  
+	    if(exists){
+			var data = fs.readFileSync(globalDatas.taskFilePath,'UTF-8');
+			data && (datas = JSON.parse(data));
+			console.log('datas',datas);
+			initData();
+			initConfig();
+	    }else{
+	    	initData();
+	    	initConfig();
+	    }
+	})
+
+	function initConfig(){
+		fs.exists(globalDatas.configFilePath, function(exists) {  
+		    if(exists){
+				var data = fs.readFileSync(globalDatas.configFilePath,'UTF-8');
+				data && (config = JSON.parse(data)[userName]);
+				console.log('config',config);
+				initEvt();
+		    }else{
+				initEvt();
+		    }
+		}); 
+	}
+
+	function initEvt(){
+		//添加任务
+		$('body').on('click', '.add', function(){
+			if(!config){
+				layer.open({
+		    		title: '错误',
+		    		content: '请先配置目录',
+		    		btn:['确定']
+		    	});
+		    	return;
+			}
+	    	layer.open({
+	    		title: '添加任务',
+	    		area:['750px'],
+	    		content: $('#addTpl').html(),
+	    		btn:['保存','取消'],
+	    		yes:function(index, layero){
+	    			fs.writeFile(globalDatas.taskFilePath, JSON.stringify(getAddData()), function(err) {
+					    if(err) {
+					        layer.open({
+					    		title: '错误',
+					    		content: ''+err,
+					    		btn:['确定']
+					    	});
+					        return;
+					    }
+
+					    var modjsPath = config.modjs+'/'+$('.in_dir').val()+'/1.0.x';
+					    var scssPath = config.scss+'/'+$('.in_dir').val()+'/v1/css';
+					    var htmlPath = config.style+'/'+$('.in_dir').val()+'/v1/tpl';
+
+					    createFile(modjsPath+'/index-debug.js','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
+					    createFile(htmlPath+'/index.html','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
+					    createFile(scssPath+'/index.scss','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
+					    mkdirs(config.style+'/'+$('.in_dir').val()+'/v1/css');
+					    mkdirs(config.style+'/'+$('.in_dir').val()+'/v1/img');
+					    
+				    	
+				    	layer.close(index);
+				    	initData();
+					});
+		    	}
+	    	});
+	    })
+		//删除任务
+	    $('body').on('click', '.del',function(){
+	    	var delItems = $('.item_cb:checked');
+	    	
+    		layer.confirm('您确定要删除吗？', {
+              icon: 4,
+			  title: '删除' //按钮
+			}, function(index){
+				var toDels = [];
+				delItems.each(function(index,dom){
+					var index = $(dom).closest('tr').find('.num').data('index');
+					var dir = $(dom).closest('tr').find('.dir').data('dir');
+					toDels.push(userData.tasks[index]);
+					rmdirs(config.style+'/'+dir);
+					rmdirs(config.scss+'/'+dir);
+					rmdirs(config.modjs+'/'+dir);
+				})
+				for(var i=0;i<toDels.length;i++){
+					userData.tasks.remove(toDels[i]);
+				}
+				fs.writeFile(globalDatas.taskFilePath, JSON.stringify(datas), function(err) {
+				    if(err) {
+				     	layer.open({
+				    		title: '错误',
+				    		content: ''+err,
+				    		btn:['确定']
+				    	});
+				        return;
+				    }
+			    	initData();
+				});	
+				layer.close(index);
+    		})
+	    })
+	    //修改任务
+	    $('body').on('click', '.modify', function(){
+	    	var oldTask = {};
+	    	oldTask.dir = $(this).closest('tr').find('.dir').data('dir');
+	    	oldTask.title = $(this).closest('tr').find('.title').data('title');
+	    	oldTask.wiki = $(this).closest('tr').find('.wiki').data('wiki');
+			if(!config){
+				layer.open({
+		    		title: '错误',
+		    		content: '请先配置目录',
+		    		btn:['确定']
+		    	});
+		    	return;
+			}
+	    	layer.open({
+	    		title: '修改任务',
+	    		area:['750px'],
+	    		content: $('#addTpl').html(),
+	    		btn:['保存','取消'],
+	    		yes:function(index, layero){
+	    			var data = getModifyData(oldTask);
+	    			fs.writeFile(globalDatas.taskFilePath, JSON.stringify(data.datas), function(err) {
+					    fs.renameSync(config.style+'/'+oldTask.dir,config.style+'/'+data.task.dir);
+					    console.log('rename',config.style+'/'+oldTask.dir,'->',config.style+'/'+data.task.dir);
+
+						fs.renameSync(config.scss+'/'+oldTask.dir,config.scss+'/'+data.task.dir);
+						console.log('rename',config.scss+'/'+oldTask.dir,'->',config.scss+'/'+data.task.dir);
+
+						fs.renameSync(config.modjs+'/'+oldTask.dir,config.modjs+'/'+data.task.dir);
+						console.log('rename',config.modjs+'/'+oldTask.dir,'->',config.modjs+'/'+data.task.dir);
+				    	layer.close(index);
+				    	initData();
+					});
+		    	}
+	    	});
+	    	$('.in_title').val(oldTask.title);
+			$('.in_dir').val(oldTask.dir);
+			$('.in_wiki').val(oldTask.wiki);
+	    })
+	    //打开
+	    $('body').on('click', '.open li', function(){
+	    	var dir = $(this).closest('tr').find('.dir').data('dir');
+	    	var path = '';
+	    	
+	    	if($(this).hasClass('op_js')){
+	    		path = config.modjs+'/'+dir+'/1.0.x/index-debug.js';
+	    		if(!isOpenFileCmd()){
+	    			shell.openItem(path);
+	    			return;
+	    		}
+	    		path = config.openFileCmd+' '+path;
+	    		Util.exec(path);
+	    	}else if($(this).hasClass('op_cs')){
+	    		path = config.style+'/'+dir+'/v1/css/index.css';
+	    		if(!isOpenFileCmd()){
+	    			shell.openItem(path);
+	    			return;
+	    		}
+	    		path = config.openFileCmd+' '+path;
+	    		Util.exec(path);
+	    	}
+	    	else if($(this).hasClass('op_sc')){
+	    		path = config.scss+'/'+dir+'/v1/css/index.scss'
+	    		if(!isOpenFileCmd()){
+	    			shell.openItem(path);
+	    			return;
+	    		}
+	    		path = config.openFileCmd+' '+path;
+	    		Util.exec(path);
+	    	}
+	    	else if($(this).hasClass('op_html')){
+	    		path = config.style+'/'+dir+'/v1/tpl/index.html';
+	    		if(!isOpenFileCmd()){
+	    			shell.openItem(path);
+	    			return;
+	    		}
+	    		path = config.openFileCmd+' '+path;
+	    		Util.exec(path);
+	    	}
+	    	else if($(this).hasClass('op_img')){
+	    		shell.openItem(config.style+'/'+dir+'/v1/img');
+	    	}
+	    	function isOpenFileCmd(){
+	    		if(!config.openFileCmd){
+	    			layer.open({
+			    		title: '失败',
+			    		content: '请先配置打开文件命令',
+			    		btn:['确定']
+			    	});
+		    		return false;
+		    	}
+		    	config.openDirCmd && Util.exec(config.openDirCmd+' '+config.rootDir);
+		    	return true;
+	    	}
+	    })
+	    //全选
+	    $('body').on('click','.all_cb',function(){
+	    	if($('.all_cb').attr('checked')){
+	    		$('.item_cb').attr('checked',true);
+	    	}else{
+	    		$('.item_cb').attr('checked',false);
+	    	}
+	    })
+	    //单选
+	    $('body').on('click','.item_cb',function(){
+	    	if($('.item_cb').length == $('.item_cb:checked').length){
+	    		$('.all_cb').attr('checked',true);
+	    	}else{
+	    		$('.all_cb').attr('checked',false);
+	    	}
+	    })
+	    //wiki
+	    $('body').on('click','.wiki a',function(){
+	    	var url = $(this).closest('.wiki').data('wiki');
+	    	shell.openExternal(url);
+	    })
+	}
+
+	function initData(){
+		var html = $('#taskItem').html();
+		if(datas[userName]){
+			var tasks = datas[userName].tasks;
+			userData = datas[userName];
+			$('#taskList').html('');
+			for(var j = 0; j < tasks.length; j++){
+				var item = '';
+				item = html.replace('<td class="num"></td>','<td data-index="'+j+'" class="num">'+(j+1)+'</td>');
+				item = item.replace('<td class="title"></td>','<td data-title="'+tasks[j].title+'" class="title">'+tasks[j].title+'</td>');
+				item = item.replace('<td class="dir"></td>','<td data-dir="'+tasks[j].dir+'" class="dir">'+tasks[j].dir+'</td>');
+				item = item.replace('<td class="wiki"></td>','<td data-wiki="'+tasks[j].wiki+'" class="wiki"><a href="javascript:void(0)">'+tasks[j].wiki+'</a></td>');
+				$('#taskList').append(item);
+			} 
+		}
+		checkBoxReset();
+	}
+
+	//checkbox检测
+	function checkBoxReset(){
+    	if($('.item_cb').length == $('.item_cb:checked').length){
+    		$('.all_cb').attr('checked',true);
+    	}else{
+    		$('.all_cb').attr('checked',false);
+    	}
+	}
+	function getAddData(){
+		var task = {};
+		//是否存在该任务
+		var existTask = false;
+		//是否存在该用户的任务列表
+		var existUser = false;
+		task.title = $('.in_title').val()||'';
+		task.dir = $('.in_dir').val()||'';
+		task.wiki = $('.in_wiki').val()||''
+		if(userData != null){
+			var tasks = userData.tasks;
+			for(var j = 0; j < tasks.length; j++){
+				if(tasks[j].dir == task.dir){
+					tasks[j].title = task.title;
+					tasks[j].wiki = task.wiki;
+					existTask = true;
+					break;
+				}
+			}
+			if(!existTask){
+	    		tasks.push(task);
+	    	}
+		}else{
+    		datas[userName] = {};
+    		datas[userName].userName = userName;
+    		datas[userName].tasks = [task];
+		}
+    	return datas;
+	}
+	function getModifyData(oldTask){
+		var task = {};
+		task.title = $('.in_title').val()||'';
+		task.dir = $('.in_dir').val()||'';
+		task.wiki = $('.in_wiki').val()||''
+		if(userData != null){
+			var tasks = userData.tasks;
+			for(var j = 0; j < tasks.length; j++){
+				if(tasks[j].dir == oldTask.dir){
+					tasks[j].title = task.title;
+					tasks[j].wiki = task.wiki;
+					break;
+				}
+			}
+		}
+    	return {datas:datas,task:task};
+	}
+	//创建文件
+	function createFile(filePath,content,fn){
+		fs.exists(filePath, function(exists) { 
+			if(!exists){
+				mkdirs(path.dirname(filePath));
+				fs.writeFile(filePath, content,{flag:'w'}, function(err) {
+				    if(err) {
+				     	layer.open({
+				    		title: '创建失败',
+				    		content: ''+err,
+				    		btn:['确定']
+				    	});
+				        return;
+				    }
+				    if(typeof fn === 'function'){
+				    	fn();
+				    }
+				});	
+			}
+		})
+		
+	}
+
+	//递归创建目录
+	function mkdirs(dirname) { 
+		var exists =  fs.existsSync(dirname);
+		if (!exists) {
+        	mkdirs(path.dirname(dirname));
+        	fs.mkdirSync(dirname);  
+        	console.log('mk dir',dirname);
+        }
+	}
+	//递归删除目录 
+	function rmdirs(dirname) {
+		var exists =  fs.existsSync(dirname);
+		if (!exists) {
+			return;
+		}
+		var stat = fs.statSync(dirname);
+	    if(stat && stat.isDirectory()){
+	    	var arr = fs.readdirSync(dirname);
+	    	if(arr.length>0){
+	    		for(var i=0; i<arr.length; i++){
+		    		arr[i] = dirname+'/'+arr[i];
+		    		rmdirs(arr[i]);
+		    	}
+	    	}
+    		console.log('rm dir',dirname);
+    		fs.rmdirSync(dirname);
+	    }else if(stat.isFile()){
+	    	console.log('rm file',dirname);
+	    	fs.unlinkSync(dirname);
+	    }
+	}
+	</script>
+    
+</body> 
+</html>

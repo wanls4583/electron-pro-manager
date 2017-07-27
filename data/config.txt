@@ -1,0 +1,1 @@
+{"Admin":{"userName":"Admin","modjs":"C:\\Users\\Administrator\\Desktop\\test\\js","style":"C:\\Users\\Administrator\\Desktop\\test\\style","scss":"C:\\Users\\Administrator\\Desktop\\test\\scss","rootDir":"C:\\Users\\Administrator\\Desktop\\test","openDirCmd":"\"D:\\Program Files\\Sublime Text 3\\subl\" -a","openFileCmd":"\"D:\\Program Files\\Sublime Text 3\\subl\""}}
