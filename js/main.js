@@ -1,14 +1,19 @@
 var mainPlatform = {
 
 	init: function(){
-
+        this.render(menu['project']);
 		this.bindEvent();
-		this.render(menu['project']);
 	},
 	bindEvent: function(){
-		var cmdCount = 0;
-		var openedCmd = {};
+		var winCount = 1;
+		var openedWin = {};
 		var self = this;
+        var firstIframe = $('iframe');
+        // 第一个窗口
+        $('.sider-nav li').first().data('src','open_iframe'+winCount);
+        firstIframe.addClass('current_win');
+        openedWin['open_iframe'+winCount] = firstIframe;
+        winCount++;
 		// 顶部大菜单单击事件
 		$(document).on('click', '.pf-nav-item', function() {
             $('.pf-nav-item').removeClass('current');
@@ -23,31 +28,33 @@ var mainPlatform = {
         	var src = $(this).data('src');
             $('.sider-nav li').removeClass('current');
             $(this).addClass('current');
+            $('.current_win').removeClass('current_win');
             if(src.indexOf('open_cmd')!=-1){
-            	var index = src.replace('open_cmd','');
-            	if(index && openedCmd['cmd'+index]){
-            		$('.current_cmd').removeClass('current_cmd');
-            		openedCmd['cmd'+index].addClass('current_cmd');
+            	if(src!='open_cmd' && openedWin[src]){
+            		openedWin[src].addClass('current_win');
             	}else{
-            		$('.current_cmd').removeClass('current_cmd');
-            		var html = 
-            		/*'<div class="crumbs">'+
-						'<i class="crumbs-arrow"></i>'+
-						'<a href="javascript:;" class="crumbs-label">机构管理</a>'+
-					'</div>'+*/
-					'<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_cmd"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd')+'> </span><input type="text"></wrap></div>'
+            		var html = '<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_win"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd')+'> </span><input type="text"></wrap></div>'
             		$('#pf-page').append(html);
-            		$(this).data('src','open_cmd'+cmdCount);
-            		openedCmd['cmd'+cmdCount] = $('.current_cmd');
-            		openedCmd['cmd'+cmdCount].find('input').focus();
+            		$(this).data('src','open_cmd'+winCount);
+            		openedWin['open_cmd'+winCount] = $('.current_win');
+            		openedWin['open_cmd'+winCount].find('input').focus();
             		if(!$(this).attr('title')){
-            			$(this).attr('title','命令窗口'+cmdCount);
-            			$(this).find('.sider-nav-title').html('命令窗口'+cmdCount);
+            			$(this).attr('title','命令窗口'+winCount);
+            			openedWin['open_cmd'+winCount].attr('title','命令窗口'+winCount);
+            			$(this).find('.sider-nav-title').html('命令窗口'+winCount);
             		}
-            		cmdCount++;
+            		winCount++;
             	}
-            }else
-            	$('iframe').attr('src', $(this).data('src'));
+            }else{
+            	if(src.indexOf('open_iframe')!=-1){
+            		openedWin[src]&&openedWin[src].addClass('current_win');
+            	}else{
+            		var html = '<iframe class="current_win" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>'
+            		$('#pf-page').append(html);
+            		$(this).data('src','open_iframe'+winCount);
+            		openedWin['open_iframe'+winCount] = $('.current_win');
+            	}
+            }
         });
         $(document).on('click','.opened_cmd',function(){
         	$(this).find('input').focus();
@@ -80,7 +87,6 @@ var mainPlatform = {
         				}
         			}
         		}
-        		console.log(args);
         		return args;
         	}
         });
