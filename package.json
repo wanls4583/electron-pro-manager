@@ -6,5 +6,9 @@
     "start": "electron .",
     "packageWin": "electron-packager . myApp --platform=win32 --arch=x64 --version=1.6.11  --out=./dist",
     "package": "electron-packager ./ --all --out ~/Desktop/app --version 1.6.11"
+  },
+  "dependencies": {
+    "bufferhelper": "^0.2.1",
+    "iconv-lite": "^0.4.18"
   }
 }

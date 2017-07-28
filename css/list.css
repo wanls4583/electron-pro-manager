@@ -3,7 +3,7 @@
 	padding: 0 !important;
 	text-align: center !important;
 }
-td.op input,td.op .open{
+td.op input,td.op .open,td.op .cmd{
 	position: relative;
 	display: inline-block;
 	height: 25px;
@@ -19,18 +19,18 @@ td.op input,td.op .open{
     margin-right: 6px;
     vertical-align: middle;
 }
-td.op .open{
+td.op .open,td.op .cmd{
 	width: 78px;
 }
-td.op input:hover,td.op .open:hover{
+td.op input:hover,td.op .open:hover,td.op .cmd:hover{
 	background-color: #0c9d72;
 	color: #fff;
 }
-td.op .open i{
+td.op .open i,td.op .cmd i{
 	font-size: 12px;
 	margin-right: 5px;
 }
-td.op .open ul{
+td.op ul{
 	width: 100%;
 	display: none;
 	position: absolute;
@@ -44,7 +44,7 @@ td.op .open ul{
     text-align: left;
     color: #000;
 }
-td.op .open:hover ul{
+td.op .open:hover ul,td.op .cmd:hover ul{
 	display: block;
 }
 td.op ul li{

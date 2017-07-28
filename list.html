@@ -120,6 +120,14 @@
 						<li class="op_img">img目录</li>
 					</ul>
 				</div>
+				<div class="cmd">
+					<i class="iconfont">&#xe618;</i><span>执行命令</span>
+					<ul>
+						<li class="watch_cmd">watch</li>
+						<li class="build_cmd">build</li>
+						
+					</ul>
+				</div>
 			</td>
 		</tr>
 	</script>
@@ -134,49 +142,12 @@
 	var dialog = remote.dialog;
 	var path = require("path");  
 	var shell = require('electron').shell;
-	var child_process = require('child_process');
 	var userName = $('.pf-user-name',window.parent.document).text();
 	var datas = {};
 	var userData = null;
     var config = null;
     var emptyFn = function(){};
-    var Util = {
-    	spawn : function(cmd,arg,options){
-    		var workerProcess = child_process.spawn(cmd,arg||{},options||{});
-
-			workerProcess.stdout.on('data', function (data) {
-			  console.log(cmd+' stdout: ' + data);
-			});
-
-			workerProcess.stderr.on('data', function (data) {
-			  console.log(cmd+' stderr: ' + data);
-			});
-			workerProcess.on('close', function (code) {
-			  console.log('子进'+cmd+'程已退出，退出码 '+code);
-			});
-			workerProcess.on('exit', function (code) {
-			  console.log('子进程'+cmd+'结束，结束码:'+code);
-			});
-			return workerProcess;
-    	},
-    	exec: function(cmd){
-    		var workerProcess = child_process.exec(cmd,function(error, stdout, stderr){
-    			 if (error) {
-				    console.error(cmd+' exec error:',error);
-				    return;
-				  }
-				  console.log(cmd+' stdout:',stdout);
-				  console.log(cmd+' stderr:',stderr);
-    		});
-    		workerProcess.on('close', function (code) {
-			  console.log('子进'+cmd+'程已退出，退出码 '+code);
-			});
-			workerProcess.on('exit', function (code) {
-			  console.log('子进程'+cmd+'结束，结束码:'+code);
-			});
-			return workerProcess;
-    	}
-    }
+    
 	fs.exists(globalDatas.taskFilePath, function(exists) {  
 	    if(exists){
 			var data = fs.readFileSync(globalDatas.taskFilePath,'UTF-8');
@@ -327,53 +298,74 @@
 	    	
 	    	if($(this).hasClass('op_js')){
 	    		path = config.modjs+'/'+dir+'/1.0.x/index-debug.js';
-	    		if(!isOpenFileCmd()){
-	    			shell.openItem(path);
-	    			return;
-	    		}
-	    		path = config.openFileCmd+' '+path;
-	    		Util.exec(path);
+	    		openFile(path);
 	    	}else if($(this).hasClass('op_cs')){
 	    		path = config.style+'/'+dir+'/v1/css/index.css';
-	    		if(!isOpenFileCmd()){
-	    			shell.openItem(path);
-	    			return;
-	    		}
-	    		path = config.openFileCmd+' '+path;
-	    		Util.exec(path);
+	    		openFile(path);
 	    	}
 	    	else if($(this).hasClass('op_sc')){
 	    		path = config.scss+'/'+dir+'/v1/css/index.scss'
-	    		if(!isOpenFileCmd()){
-	    			shell.openItem(path);
-	    			return;
-	    		}
-	    		path = config.openFileCmd+' '+path;
-	    		Util.exec(path);
+	    		openFile(path);
 	    	}
 	    	else if($(this).hasClass('op_html')){
 	    		path = config.style+'/'+dir+'/v1/tpl/index.html';
-	    		if(!isOpenFileCmd()){
-	    			shell.openItem(path);
-	    			return;
-	    		}
-	    		path = config.openFileCmd+' '+path;
-	    		Util.exec(path);
+	    		openFile(path);
 	    	}
 	    	else if($(this).hasClass('op_img')){
 	    		shell.openItem(config.style+'/'+dir+'/v1/img');
 	    	}
-	    	function isOpenFileCmd(){
+	    	//用编辑器打开文件
+	    	function openFile(path){
 	    		if(!config.openFileCmd){
+	    			//如果没有配置命令，则用默认方式打开
+	    			shell.openItem(path);
+	    			return;
+	    		}
+	    		var cmd = config.openFileCmd.cmd;
+	    		var args = config.openFileCmd.args;
+	    		var cwd = config.openFileCmd.cwd;
+	    		args = args?args.replace('{file}',path).replace('{dir}',dir).replace('{rootDir}',config.rootDir||''):path;
+	    		args = args.indexOf(',')?args.split(','):[args];
+	    		Util.spawn(cmd,args,cwd);
+	    		addDir();
+	    	}
+	    	//将目录添加到编辑器
+	    	function addDir(){
+	    		if(!config.openDirCmd){
+	    			//shell.openItem(config.rootDir);
+	    			return;
+	    		}
+	    		var cmd = config.openDirCmd.cmd;
+	    		var args = config.openDirCmd.args;
+	    		var cwd = config.openDirCmd.cwd;
+	    		args = args?args.replace('{file}',path).replace('{dir}',dir).replace('{rootDir}',config.rootDir||''):path;
+	    		args = args.indexOf(',')?args.split(','):[args];
+	    		Util.spawn(cmd,args,cwd);
+	    	}
+	    })
+	    //命令
+	    $('body').on('click', '.cmd li', function(){
+	    	var dir = $(this).closest('tr').find('.dir').data('dir');
+	    	if($(this).hasClass('watch_cmd')){
+	    		spwan('watchCmd');
+	    	}else if($(this).hasClass('build_cmd')){
+	    		spwan('watchCmd');
+	    	}
+	    	function spwan(cmd_){
+	    		if(!config[cmd_]){
 	    			layer.open({
-			    		title: '失败',
-			    		content: '请先配置打开文件命令',
+			    		title: '执行失败',
+			    		content: '请先配置'+cmd_+'命令',
 			    		btn:['确定']
 			    	});
-		    		return false;
-		    	}
-		    	config.openDirCmd && Util.exec(config.openDirCmd+' '+config.rootDir);
-		    	return true;
+	    			return;
+	    		}
+	    		var cmd = config[cmd_].cmd;
+	    		var args = config[cmd_].args;
+	    		var cwd = config[cmd_].cwd;
+	    		args = args?args.replace('{file}',path).replace('{dir}','').replace('{rootDir}',config.rootDir||''):'';
+	    		args = args && (args.indexOf(',')?args.split(','):[args]);
+	    		Util.spawn(cmd,args,cwd);
 	    	}
 	    })
 	    //全选

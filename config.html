@@ -13,10 +13,23 @@
 	.kv-content input{
 		width: 300px;
 	}
+	.kv-content .cmd,.kv-content .args{
+		width: 100px;
+	}
+	.kv-content .cwd{
+		width: 200px;
+	}
 	.kv-content a{
 		height: 25px;
 		line-height: 25px;
 		margin-left: 8px;
+	}
+	.text-tip{
+		margin-left: 10px;
+		color: #666;
+	}
+	.text-tip:first-child{
+		margin-left: 0px;
 	}
 </style>
 </head> 
@@ -86,18 +99,42 @@
 					</tr>
 					<tr>
 						<td class="kv-label">
-							打开项目目录命令：
+							添加文件夹到到编辑器命令：
 						</td>
-						<td class="kv-content" style="padding: 10px;">
-							<input type="text" class="dir openDirCmd">
+						<td class="kv-content openDirCmd" style="padding: 10px;">
+							<span class="text-tip">命令：</span><input type="text" class="dir cmd">
+							<span class="text-tip">参数：</span><input type="text" class="dir args">
+							<span class="text-tip">运行目录：</span><input type="text" class="dir cwd">
 						</td>
 					</tr>
 					<tr>
 						<td class="kv-label">
 							打开文件命令：
 						</td>
-						<td class="kv-content" style="padding: 10px;">
-							<input type="text" class="dir openFileCmd">
+						<td class="kv-content openFileCmd" style="padding: 10px;">
+							<span class="text-tip">命令：</span><input type="text" class="dir cmd">
+							<span class="text-tip">参数：</span><input type="text" class="dir args">
+							<span class="text-tip">运行目录：</span><input type="text" class="dir cwd">
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							sass watch命令：
+						</td>
+						<td class="kv-content watchCmd" style="padding: 10px;">
+							<span class="text-tip">命令：</span><input type="text" class="dir cmd">
+							<span class="text-tip">参数：</span><input type="text" class="dir args">
+							<span class="text-tip">运行目录：</span><input type="text" class="dir cwd">
+						</td>
+					</tr>
+					<tr>
+						<td class="kv-label">
+							js build命令：
+						</td>
+						<td class="kv-content buildCmd" style="padding: 10px;">
+							<span class="text-tip">命令：</span><input type="text" class="dir cmd">
+							<span class="text-tip">参数：</span><input type="text" class="dir args">
+							<span class="text-tip">运行目录：</span><input type="text" class="dir cwd">
 						</td>
 					</tr>
 				</tbody>
@@ -149,12 +186,26 @@
     	function initData(){
 	    	if(initDatas[userName]){
 	    		var config = initDatas[userName];
+	    		$('.rootDir').val(config.rootDir);
 	    		$('.modjsDir').val(config.modjs);
     			$('.styleDir').val(config.style);
     			$('.scssDir').val(config.scss);
-    			$('.openDirCmd').val(config.openDirCmd);
-    			$('.openFileCmd').val(config.openFileCmd);
-    			$('.rootDir').val(config.rootDir);
+
+    			$('.openDirCmd').find('.cmd').val(config.openDirCmd.cmd);
+    			$('.openDirCmd').find('.args').val(config.openDirCmd.args);
+    			$('.openDirCmd').find('.cwd').val(config.openDirCmd.cwd);
+
+    			$('.openFileCmd').find('.cmd').val(config.openFileCmd.cmd);
+    			$('.openFileCmd').find('.args').val(config.openFileCmd.args);
+    			$('.openFileCmd').find('.cwd').val(config.openFileCmd.cwd);
+    			
+    			$('.watchCmd').find('.cmd').val(config.watchCmd.cmd);
+    			$('.watchCmd').find('.args').val(config.watchCmd.args);
+    			$('.watchCmd').find('.cwd').val(config.watchCmd.cwd);
+
+    			$('.buildCmd').find('.cmd').val(config.buildCmd.cmd);
+    			$('.buildCmd').find('.args').val(config.buildCmd.args);
+    			$('.buildCmd').find('.cwd').val(config.buildCmd.cwd);
 	    	}
     	}
     	
@@ -164,8 +215,22 @@
 	    	config.style = $('.styleDir').val();
 	    	config.scss = $('.scssDir').val();
 	    	config.rootDir = $('.rootDir').val();
-	    	config.openDirCmd = $('.openDirCmd').val();
-	    	config.openFileCmd = $('.openFileCmd').val();
+	    	config.openDirCmd = {};
+	    	config.openDirCmd.cmd = $('.openDirCmd').find('.cmd').val();
+	    	config.openDirCmd.args = $('.openDirCmd').find('.args').val();
+	    	config.openDirCmd.cwd = $('.openDirCmd').find('.cwd').val();
+	    	config.openFileCmd = {};
+	    	config.openFileCmd.cmd = $('.openFileCmd').find('.cmd').val();
+	    	config.openFileCmd.args = $('.openFileCmd').find('.args').val();
+	    	config.openFileCmd.cwd = $('.openFileCmd').find('.cwd').val();
+	    	config.watchCmd = {};
+	    	config.watchCmd.cmd = $('.watchCmd').find('.cmd').val();
+	    	config.watchCmd.args = $('.watchCmd').find('.args').val();
+	    	config.watchCmd.cwd = $('.watchCmd').find('.cwd').val();
+	    	config.buildCmd = {};
+    		config.buildCmd.cmd = $('.buildCmd').find('.cmd').val();
+    		config.buildCmd.args = $('.buildCmd').find('.args').val();
+    		config.buildCmd.cwd = $('.buildCmd').find('.cwd').val();
 	    	datas[userName] = config; 
 	    	return datas;
     	}
