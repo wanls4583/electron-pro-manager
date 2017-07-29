@@ -1,9 +1,9 @@
 var menu = {
-	'project': {
+	'home': {
 		title: '项目',
 		menu: [{
 			title: '项目',
-			icon: 'imgs/main/l03.png',
+			icon: 'imgs/main/l01.png',
 			href: 'list.html',
 			isCurrent: true
 		}]

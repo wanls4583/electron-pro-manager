@@ -92,3 +92,9 @@ html{height:100%;/* background:#0c9d72 */}#pf-hd{height:70px;background:url('../
 .opened_cmd.current_win{
 	display: block;
 }
+.menu_wrap{
+	display: none;
+}
+.menu_wrap.current_menu{
+	display: block;
+}
