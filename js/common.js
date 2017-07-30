@@ -19,14 +19,27 @@ var require = require||window.parent.require;
 var child_process = require('child_process');
 var iconv = require('iconv-lite');
 var BufferHelper = require('bufferhelper');
+var remote = require('electron').remote
+var dialog = remote.dialog;
+var path = require("path"); 
+var shell = require('electron').shell; 
 globalDatas.configFilePath = "data/config.txt";
 globalDatas.taskFilePath = "data/task.txt";
-
+globalDatas.dicFilePath = "data/dic.txt";
+globalDatas.cmdFilePath = 'data/cmd.txt';
 var Util = {
+		init: function(){
+			window.exec = this.spawn;
+			window.createFile = this.createFile;
+			window.mkdirs = this.mkdirs;
+		},
+		replaceReturn : function(str){
+			return str.replace(/\r\n|\r|\n/g,'<br/>')
+		},
     	spawn : function(cmd,arg,cwd,$dom){
     		var self = this;
     		var resultCwd = '';
-    		cwd = cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
+    		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
     		//切换目录命令特殊处理
     		if(cmd=='cd'){
     			resultCwd = this.parsePathForWin32(cwd,arg);
@@ -46,7 +59,7 @@ var Util = {
     			var msg = '<span>'+cwd + '> '+'</span>'+cmd;
     			$openedCmd = $dom.closest('.opened_cmd');
     			arg ? (msg = msg+' '+arg.join(' ')+'<br/>'):(msg = msg+'<br/>');
-    			$dom.append(msg.replace(/\r\n|\r|\n/g,'<br/>'));
+    			$dom.append(self.replaceReturn(msg));
     			resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ')
     			&& $openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
     			$openedCmd.find('.wrap')[0].scrollIntoView(true);
@@ -63,7 +76,7 @@ var Util = {
 				var msg = '命令'+cmd+'执行失败';
 				if($dom){
 					msg = msg+'<br/>';
-					$dom.append(msg.replace(/\r\n|\r|\n/g,'<br/>'));
+					$dom.append(self.replaceReturn(msg));
 					$openedCmd.find('.wrap')[0].scrollIntoView(true);
 					$openedCmd.find('.wrap').addClass('choke');
 				}
@@ -75,15 +88,17 @@ var Util = {
 				console.log(cmd+' stdout: ' +msg);
 				if($dom){
 					msg = msg+'<br/>';
-					$dom.append(msg.replace(/\r\n|\r|\n/g,'<br/>'));
+					$dom.append(self.replaceReturn(msg));
 					$openedCmd.find('.wrap')[0].scrollIntoView(true);
 					$openedCmd.find('.wrap').addClass('choke');
 					$openedCmd.find('.wrap').find('input').css('padding-left','0px');
 				}
 			});
 			workerProcess.stdout.on('end',function(){
-				$openedCmd.find('.wrap').removeClass('choke');
-				$openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+				if($dom){
+					$openedCmd.find('.wrap').removeClass('choke');
+					$openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+				}
 			})
 			workerProcess.stderr.on('data', function (data) {
 				var bufferHelper = new BufferHelper();
@@ -91,7 +106,7 @@ var Util = {
 				console.log(cmd+' stderr: ' +msg);
 				if($dom){
 					msg = cwd+'> '+msg+'<br/>';
-					$dom.append(msg.replace(/\r\n|\r|\n/g,'<br/>'));
+					$dom.append(self.replaceReturn(msg));
 					$dom.closest('.opened_cmd').find('input')[0].scrollIntoView(true);
 				}
 			});
@@ -104,6 +119,7 @@ var Util = {
 			return workerProcess;
     	},
     	exec: function(cmd,$dom,cwd){
+    		var self = this;
     		var workerProcess = child_process.exec(cmd,(cwd&&{cwd:cwd})||{},function(error, stdout, stderr){
 				if (error) {
 					appendMsg(cmd+'命令执行失败');
@@ -121,7 +137,7 @@ var Util = {
 					if($dom){
 						var $openedCmd = $dom.closest('.opened_cmd');
 						msg = msg+'<br/>';
-						$dom.append(msg.replace(/\r\n|\r|\n/g,'<br/>'));
+						$dom.append(self.replaceReturn(msg));
 						$openedCmd.find('.wrap')[0].scrollIntoView(true);
 					}
 				}
@@ -147,5 +163,129 @@ var Util = {
 			}
 			resultCwd = resultCwd.replace(/[\/]+$/,'');
 			return resultCwd;
-    	}
+    	},
+    	//创建文件
+		createFile: function (filePath,content,fn){
+			var This = this;
+			fs.exists(filePath, function(exists) { 
+				if(!exists){
+					This.mkdirs(path.dirname(filePath),function(){
+						This.writeFile(filePath, function(err) {
+						    if(err) {
+						     	layer.open({
+						    		title: '创建失败',
+						    		content: ''+err,
+						    		btn:['确定']
+						    	});
+						        return;
+						    }
+						    if(typeof fn === 'function'){
+						    	fn();
+						    }
+						});	
+					});
+				}
+			})
+			
+		},
+		//创建目录
+		mkdirs :function (dirname,callback) {
+			var This = this;
+			fs.exists(dirname,function(exists){
+				if(!exists) {
+			    	This.mkdirs(path.dirname(dirname),function(){
+			    		fs.mkdir(dirname,function(){
+			    			console.log('mk dir',dirname);
+			    			typeof callback=== 'function' && callback();
+			    		});  
+			    	});
+			    }else{
+			    	typeof callback=== 'function' && callback();
+			    }
+			});
+			
+		},
+		//删除目录 
+		rmdirs :function(dirname,callback) {
+			var This = this;
+			fs.exists(dirname,function(exists){
+				if (!exists) {
+					return;
+				}else{
+					fs.stat(dirname,function(err, stat){
+						if(stat && stat.isDirectory()){
+					    	fs.readdir(dirname,function(err, arr){
+					    		if(arr.length>0){
+						    		for(var i=0; i<arr.length; i++){
+							    		arr[i] = dirname+'/'+arr[i];
+							    		(function(num){
+							    			This.rmdirs(arr[num],function(){
+						    					if(num==arr.length-1){
+							    					console.log('rm dir',dirname);
+													fs.rmdir(dirname,callback);
+							    				}
+							    			});
+							    		})(i)	
+							    	}
+						    	}else{
+						    		console.log('rm dir',dirname);
+									fs.rmdir(dirname,callback);
+						    	}
+					    	});
+							
+					    }else if(stat.isFile()){
+					    	console.log('rm file',dirname);
+					    	fs.unlink(dirname,function(){
+					    		typeof callback==='function' && callback();
+					    	});
+					    }
+					});
+				    
+				}
+			});		
+		},
+		rename: function(oldname,newname){
+			this.exec('ren '+oldname+' '+newname);
+		},
+		loadFile: function(path,callback1,callback2){
+			var This = this;
+			fs.exists(path, function(exists) {
+				if(exists){
+					typeof callback1 ==='function' && This.readFile(path,callback1);
+				}else{
+					typeof callback2 ==='function' && callback2(exists);
+				} 
+			}); 
+		},
+		loadTaskFile : function(callback1,callback2){
+			this.loadFile(globalDatas.taskFilePath,callback1,callback2);
+		},
+		loadConfigFile: function(callback1,callback2){
+			this.loadFile(globalDatas.configFilePath,callback1,callback2);
+		},
+		loadDicFile: function(callback1,callback2){
+			this.loadFile(globalDatas.dicFilePath,callback1,callback2);
+		},
+		loadCmdFile: function(callback1,callback2){
+			this.loadFile(globalDatas.cmdFilePath,callback1,callback2);
+		},
+		readFile: function(path,callback){
+			fs.readFile(path,function(err,data){
+				typeof callback ==='function' && callback(err,data);
+			})
+		},
+		writeFile: function(path,data,callback){
+			fs.writeFile(path, data, function(err){
+				typeof callback ==='function' && callback(err);
+			});
+		},
+		writeDicFile: function(data,callback){
+			this.writeFile(globalDatas.dicFilePath,data,callback);
+		},
+		writeTaskFile: function(data,callback){
+			this.writeFile(globalDatas.taskFilePath,data,callback);
+		},
+		writeCmdFile: function(data,callback){
+			this.writeFile(globalDatas.cmdFilePath,data,callback);
+		}
     }

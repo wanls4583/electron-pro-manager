@@ -2,7 +2,7 @@ var mainPlatform = {
     menus: [],
     openedWin: {},
 	init: function(){
-        this.render(menu['home']);
+        this.render(menu['config']);
 		this.bindEvent();
 	},
 	bindEvent: function(){
@@ -168,7 +168,7 @@ var mainPlatform = {
 
         $(this).data('src','open_iframe_'+this.menus[menuName]+'_'+this.menus[menuName].iframeCount);
         this.openedWin['open_iframe_'+menuName+'_'+this.menus[menuName].iframeCount] = $('.current_win');
-        $('.current_menu').find('.sider-nav').find('li').last().trigger('click');
+        $('.current_menu').find('.sider-nav').find('li').first().trigger('click');
         this.menus[menuName].iframeCount++;
 	},
 

@@ -1,0 +1,1 @@
+{"Admin":{"userName":"Admin","cmds":[{"title":"testCmd","key":"testCmd","code":"spwan('subl',['C:\\Users\\Administrator\\Desktop\\electron-pro-manager\\data\\cmd.txt'],{cwd:'C:\\Program Files (x86)\\Sublime Text3'})","cmd":""}]}}
