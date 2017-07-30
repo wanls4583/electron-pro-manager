@@ -98,3 +98,6 @@ html{height:100%;/* background:#0c9d72 */}#pf-hd{height:70px;background:url('../
 .menu_wrap.current_menu{
 	display: block;
 }
+.template{
+	display: none;
+}

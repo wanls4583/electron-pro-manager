@@ -49,7 +49,7 @@
 					<tr>
 						<th class="grid-checkbox"><input class="all_cb" type="checkbox"></th>
 						<th >序号</th>
-						<th >专题名</th>
+						<th >标题</th>
 						<th >wiki</th>
 						<th >目录名</th>
 						<th class="op"> 操作 </th>
@@ -101,6 +101,11 @@
 			
 		</table>
 	</script>
+	<script type="text/template" id="cmdTpl">
+		<div class="button">
+			<i class="iconfont">&#xe628;</i><span class="button-label"></span>
+		</div>
+	</script>
 	<script type="text/template" id="taskItem">
 		<tr>
 			<td class="grid-checkbox"><input class="item_cb" name="item_cb" type="checkbox"></td>
@@ -110,24 +115,7 @@
 			<td class="dir"></td>
 			<td class="op">
 				<input type="button" class="modify" value="修改">
-				<div class="open">
-					<i class="iconfont">&#xe618;</i><span>打开文件</span>
-					<ul>
-						<li class="op_html">index.html</li>
-						<li class="op_sc">index.scss</li>
-						<li class="op_cs">index.css</li>
-						<li class="op_js">js文件</li>
-						<li class="op_img">img目录</li>
-					</ul>
-				</div>
-				<div class="cmd">
-					<i class="iconfont">&#xe618;</i><span>执行命令</span>
-					<ul>
-						<li class="watch_cmd">watch</li>
-						<li class="build_cmd">build</li>
-						
-					</ul>
-				</div>
+				<input type="button" class="open_cmd" value="命令面板">
 			</td>
 		</tr>
 	</script>

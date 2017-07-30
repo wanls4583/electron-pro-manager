@@ -3,13 +3,13 @@ var fs = require('fs');
 var shell = require('electron').shell;
 var userName = $('.pf-user-name',window.parent.document).text();
 var datas = {};
-var userCmdData = null;
-var config = null;
+var cmdData = parent.cmdData;
+var config = parent.config;
 
 
 Util.loadCmdFile(
 	function(err,data){
-		data && (datas = JSON.parse(data));
+		data && data.length>4 && (datas = JSON.parse(data));
 		console.log('datas',datas);
 		initData();
 		initConfig();
@@ -21,7 +21,7 @@ Util.loadCmdFile(
 function initConfig(){
 	Util.loadConfigFile(
 		function(err,data){
-			data && (config = JSON.parse(data)[userName]);
+			data && data.length>4 && (config = parent.config = JSON.parse(data)[userName]);
 			console.log('config',config);
 			initEvt();
 		},
@@ -35,7 +35,7 @@ function initEvt(){
 	//添加任务
 	$('body').on('click', '.add', function(){
     	layer.open({
-    		title: '添加字典',
+    		title: '添加命令',
     		area:['750px'],
     		content: $('#addTpl').html(),
     		btn:['保存','取消'],
@@ -64,10 +64,10 @@ function initEvt(){
 		}, function(index){
 			var toDels = [];
 			delItems.each(function(index,dom){
-				toDels.push(userCmdData.cmds[index]);
+				toDels.push(cmdData.cmds[index]);
 			});
 			for(var i=0;i<toDels.length;i++){
-				userCmdData.cmds.remove(toDels[i]);
+				cmdData.cmds.remove(toDels[i]);
 			}
 			Util.writeCmdFile(JSON.stringify(datas),function(err) {
 			    if(err){
@@ -89,6 +89,7 @@ function initEvt(){
     	oldCmd.key = $(this).closest('tr').find('.key').data('key');
     	oldCmd.title = $(this).closest('tr').find('.title').data('title');
     	oldCmd.code = $(this).closest('tr').find('.code').data('code');
+
 		if(!config){
 			layer.open({
 	    		title: '错误',
@@ -98,7 +99,7 @@ function initEvt(){
 	    	return;
 		}
     	layer.open({
-    		title: '修改任务',
+    		title: '修改命令',
     		area:['750px'],
     		content: $('#addTpl').html(),
     		btn:['保存','取消'],
@@ -120,6 +121,7 @@ function initEvt(){
     	$('.in_title').val(oldCmd.title);
 		$('.in_key').val(oldCmd.key);
 		$('.in_code').val(oldCmd.code);
+
     })
     
     //全选
@@ -144,16 +146,18 @@ function initData(){
 	var html = $('#cmdItem').html();
 	if(datas[userName]){
 		var cmds = datas[userName].cmds;
-		userCmdData = datas[userName];
+		cmdData = parent.cmdData = datas[userName];
 		$('#cmdList').html('');
 		for(var j = 0; j < cmds.length; j++){
 			var item = '';
 			item = html.replace('<td class="num"></td>','<td data-index="'+j+'" class="num">'+(j+1)+'</td>');
 			item = item.replace('<td class="title"></td>','<td data-title="'+cmds[j].title+'" class="title">'+cmds[j].title+'</td>');
-			item = item.replace('<td class="code"></td>','<td data-code="'+cmds[j].code+'" class="code">'+Util.replaceReturn(cmds[j].code)+'</td>');
+			item = item.replace('<td class="code"></td>','<td class="code">'+Util.replaceReturn(cmds[j].code)+'</td>');
 			item = item.replace('<td class="key"></td>','<td data-key="'+cmds[j].key+'" class="key">'+cmds[j].key+'</td>');
 			$('#cmdList').append(item);
+			$('#cmdList').find('.code').last().data('code',cmds[j].code);
 		} 
+
 	}
 	checkBoxReset();
 }
@@ -175,8 +179,8 @@ function getAddData(){
 	cmd.title = $('.in_title').val()||'';
 	cmd.key = $('.in_key').val()||'';
 	cmd.code = $('.in_code').val()||''
-	if(userCmdData != null){
-		var cmds = userCmdData.cmds;
+	if(cmdData != null){
+		var cmds = cmdData.cmds;
 		for(var j = 0; j < cmds.length; j++){
 			if(cmds[j].key == cmd.key){
 				cmds[j].title = cmd.title;
@@ -200,8 +204,8 @@ function getModifyData(oldCmd){
 	cmd.title = $('.in_title').val()||'';
 	cmd.key = $('.in_key').val()||'';
 	cmd.code = $('.in_code').val()||''
-	if(userCmdData != null){
-		var cmds = userCmdData.cmds;
+	if(cmdData != null){
+		var cmds = cmdData.cmds;
 		for(var j = 0; j < cmds.length; j++){
 			if(cmds[j].key == oldCmd.key){
 				cmds[j].title = cmd.title;

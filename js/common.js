@@ -29,7 +29,7 @@ globalDatas.dicFilePath = "data/dic.txt";
 globalDatas.cmdFilePath = 'data/cmd.txt';
 var Util = {
 		init: function(){
-			window.exec = this.spawn;
+			window.spawn = this.spawn;
 			window.createFile = this.createFile;
 			window.mkdirs = this.mkdirs;
 		},
@@ -37,6 +37,7 @@ var Util = {
 			return str.replace(/\r\n|\r|\n/g,'<br/>')
 		},
     	spawn : function(cmd,arg,cwd,$dom){
+    		console.log(cmd,arg,cwd)
     		var self = this;
     		var resultCwd = '';
     		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
@@ -111,10 +112,10 @@ var Util = {
 				}
 			});
 			workerProcess.on('close', function (code) {
-			    console.log('spwan子进程'+cmd+'程已退出，退出码 '+code);
+			    console.log('spawn子进程'+cmd+'程已退出，退出码 '+code);
 			});
 			workerProcess.on('exit', function (code) {
-			    console.log('spwan子进程'+cmd+'结束，结束码:'+code);
+			    console.log('spawn子进程'+cmd+'结束，结束码:'+code);
 			});
 			return workerProcess;
     	},
@@ -289,3 +290,4 @@ var Util = {
 			this.writeFile(globalDatas.cmdFilePath,data,callback);
 		}
     }
+    Util.init();

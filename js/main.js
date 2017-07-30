@@ -1,6 +1,10 @@
 var mainPlatform = {
     menus: [],
     openedWin: {},
+    cmdData:null,
+    dicData:null,
+    taskData:null,
+    config:null,
 	init: function(){
         this.render(menu['config']);
 		this.bindEvent();
@@ -38,7 +42,7 @@ var mainPlatform = {
             	if(src!='open_cmd_' && self.openedWin[src]){
             		self.openedWin[src].addClass('current_win');
             	}else{
-            		var html = '<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_win"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd')+'> </span><input type="text"></wrap></div>'
+            		var html = '<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_win"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd').replace(/\\/g,'/')+'> </span><input type="text"></wrap></div>'
             		var openedCmd = null;
                     $('#pf-page').append(html);
                     openedCmd = $('.current_win');

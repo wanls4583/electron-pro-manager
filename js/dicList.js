@@ -3,13 +3,13 @@ var fs = require('fs');
 var shell = require('electron').shell;
 var userName = $('.pf-user-name',window.parent.document).text();
 var datas = {};
-var userDicData = null;
-var config = null;
+var dicData = parent.dicData;
+var config = parent.config;
 
 
 Util.loadDicFile(
 	function(err,data){
-		data && (datas = JSON.parse(data));
+		data && data.length>4 && (datas = JSON.parse(data));
 		console.log('datas',datas);
 		initData();
 		initConfig();
@@ -21,7 +21,7 @@ Util.loadDicFile(
 function initConfig(){
 	Util.loadConfigFile(
 		function(err,data){
-			data && (config = JSON.parse(data)[userName]);
+			data && data.length>4 && (config = parent.config = JSON.parse(data)[userName]);
 			console.log('config',config);
 			initEvt();
 		},
@@ -64,10 +64,10 @@ function initEvt(){
 		}, function(index){
 			var toDels = [];
 			delItems.each(function(index,dom){
-				toDels.push(userDicData.dics[index]);
+				toDels.push(dicData.dics[index]);
 			});
 			for(var i=0;i<toDels.length;i++){
-				userDicData.dics.remove(toDels[i]);
+				dicData.dics.remove(toDels[i]);
 			}
 			Util.writeDicFile(JSON.stringify(datas),function(err) {
 			    if(err){
@@ -149,7 +149,7 @@ function initData(){
 	var html = $('#dicItem').html();
 	if(datas[userName]){
 		var dics = datas[userName].dics;
-		userDicData = datas[userName];
+		dicData = parent.dicData = datas[userName];
 		$('#dicList').html('');
 		for(var j = 0; j < dics.length; j++){
 			var item = '';
@@ -180,8 +180,8 @@ function getAddData(){
 	dic.title = $('.in_title').val()||'';
 	dic.key = $('.in_key').val()||'';
 	dic.value = $('.in_value').val()||''
-	if(userDicData != null){
-		var dics = userDicData.dics;
+	if(dicData != null){
+		var dics = dicData.dics;
 		for(var j = 0; j < dics.length; j++){
 			if(dics[j].key == dic.key){
 				dics[j].title = dic.title;
@@ -205,8 +205,8 @@ function getModifyData(oldDic){
 	dic.title = $('.in_title').val()||'';
 	dic.key = $('.in_key').val()||'';
 	dic.value = $('.in_value').val()||''
-	if(userDicData != null){
-		var dics = userDicData.dics;
+	if(dicData != null){
+		var dics = dicData.dics;
 		for(var j = 0; j < dics.length; j++){
 			if(dics[j].key == oldDic.key){
 				dics[j].title = dic.title;

@@ -3,12 +3,14 @@
 	var shell = require('electron').shell;
 	var userName = $('.pf-user-name',window.parent.document).text();
 	var datas = {};
-	var userData = null;
-    var config = null;
-    
+	var taskData = parent.taskData;
+    var config = parent.config;
+    var cmdData = parent.cmdData;
+    var dicData = parent.dicData;
+
     Util.loadTaskFile(
 		function(err,data){
-			data && (datas = JSON.parse(data));
+			data && data.length>4 && (datas = JSON.parse(data));
 			console.log('datas',datas);
 			initData();
 			initConfig();
@@ -20,7 +22,7 @@
 	function initConfig(){
 		Util.loadConfigFile(
 			function(err,data){
-				data && (config = JSON.parse(data)[userName]);
+				data && data.length>4 && (config = parent.config = JSON.parse(data)[userName]);
 				console.log('config',config);
 				initEvt();
 			},
@@ -56,18 +58,6 @@
 					    	});
 					        return;
 					    }
-
-					    var modjsPath = config.modjs+'/'+$('.in_dir').val()+'/1.0.x';
-					    var scssPath = config.scss+'/'+$('.in_dir').val()+'/v1/css';
-					    var htmlPath = config.style+'/'+$('.in_dir').val()+'/v1/tpl';
-
-					    Util.createFile(modjsPath+'/index-debug.js','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
-					    Util.createFile(htmlPath+'/index.html','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
-					    Util.createFile(scssPath+'/index.scss','/*\ncreate by qf\ndate: '+new Date().toLocaleString()+'\n*/');
-					    Util.mkdirs(config.style+'/'+$('.in_dir').val()+'/v1/css');
-					    Util.mkdirs(config.style+'/'+$('.in_dir').val()+'/v1/img');
-					    
-				    	
 				    	layer.close(index);
 				    	initData();
 					});
@@ -84,15 +74,10 @@
 			}, function(index){
 				var toDels = [];
 				delItems.each(function(index,dom){
-					var index = $(dom).closest('tr').find('.num').data('index');
-					var dir = $(dom).closest('tr').find('.dir').data('dir');
-					toDels.push(userData.tasks[index]);
-					Util.rmdirs(config.style+'/'+dir);
-					Util.rmdirs(config.scss+'/'+dir);
-					Util.rmdirs(config.modjs+'/'+dir);
+					toDels.push(taskData.tasks[index]);
 				})
 				for(var i=0;i<toDels.length;i++){
-					userData.tasks.remove(toDels[i]);
+					taskData.tasks.remove(toDels[i]);
 				}
 				Util.writeTaskFile(JSON.stringify(datas), function(err) {
 				    if(err) {
@@ -130,15 +115,6 @@
 	    		yes:function(index, layero){
 	    			var data = getModifyData(oldTask);
 	    			Util.writeTaskFile(JSON.stringify(data.datas), function(err) {
-					    Util.rename(config.style+'/'+oldTask.dir,config.style+'/'+data.task.dir);
-					    console.log('rename',config.style+'/'+oldTask.dir,'->',config.style+'/'+data.task.dir);
-
-						Util.rename(config.scss+'/'+oldTask.dir,config.scss+'/'+data.task.dir);
-						console.log('rename',config.scss+'/'+oldTask.dir,'->',config.scss+'/'+data.task.dir);
-
-						Util.rename(config.modjs+'/'+oldTask.dir,config.modjs+'/'+data.task.dir);
-						console.log('rename',config.modjs+'/'+oldTask.dir,'->',config.modjs+'/'+data.task.dir);
-				    	
 				    	layer.close(index);
 				    	initData();
 					});
@@ -148,82 +124,59 @@
 			$('.in_dir').val(oldTask.dir);
 			$('.in_wiki').val(oldTask.wiki);
 	    })
-	    //打开
-	    $('body').on('click', '.open li', function(){
-	    	var dir = $(this).closest('tr').find('.dir').data('dir');
-	    	var path = '';
-	    	
-	    	if($(this).hasClass('op_js')){
-	    		path = config.modjs+'/'+dir+'/1.0.x/index-debug.js';
-	    		openFile(path);
-	    	}else if($(this).hasClass('op_cs')){
-	    		path = config.style+'/'+dir+'/v1/css/index.css';
-	    		openFile(path);
+	    //打开命令面板
+	    $('body').on('click', '.open_cmd', function(){
+	    	var tpl = $('#cmdTpl');
+	    	if(!cmdData){
+	    		Util.loadCmdFile(function(err,data){
+	    			data && data.length>4 && (cmdData = parent.cmdData = JSON.parse(data)[userName]);
+	    			dicData && createCmdPanel();
+	    		})
 	    	}
-	    	else if($(this).hasClass('op_sc')){
-	    		path = config.scss+'/'+dir+'/v1/css/index.scss'
-	    		openFile(path);
+	    	if(!dicData){
+	    		Util.loadCmdFile(function(err,data){
+	    			data && data.length>4 && (dicData = parent.dicData = JSON.parse(data)[userName]);
+	    			cmdData && createCmdPanel();
+	    		})
 	    	}
-	    	else if($(this).hasClass('op_html')){
-	    		path = config.style+'/'+dir+'/v1/tpl/index.html';
-	    		openFile(path);
+	    	if(cmdData && dicData){
+	    		createCmdPanel()
 	    	}
-	    	else if($(this).hasClass('op_img')){
-	    		shell.openItem(config.style+'/'+dir+'/v1/img');
-	    	}
-	    	//用编辑器打开文件
-	    	function openFile(path){
-	    		if(!config.openFileCmd){
-	    			//如果没有配置命令，则用默认方式打开
-	    			shell.openItem(path);
-	    			return;
+
+	    	function createCmdPanel(){
+	    		var cmdItemHtml = '<div class="button">i class="iconfont">&#xe628;</i><span class="button-label"></span></div>';
+	    		var cmdItem = null;
+	    		var html = '';
+	    		for(var i=0; i<cmdData.cmds.length; i++){
+	    			cmdItem = cmdData.cmds[i];
+	    			html += '<div data-key="'+cmdItem.key+'" class="cmd button"><i class="iconfont">&#xe628;</i><span class="button-label">'+cmdItem.title+'</span></div>'
 	    		}
-	    		var cmd = config.openFileCmd.cmd;
-	    		var args = config.openFileCmd.args;
-	    		var cwd = config.openFileCmd.cwd;
-	    		args = args?args.replace('{file}',path).replace('{dir}',dir).replace('{rootDir}',config.rootDir||''):path;
-	    		args = args.indexOf(',')?args.split(','):[args];
-	    		Util.spawn(cmd,args,cwd);
-	    		addDir();
-	    	}
-	    	//将目录添加到编辑器
-	    	function addDir(){
-	    		if(!config.openDirCmd){
-	    			//shell.openItem(config.rootDir);
-	    			return;
-	    		}
-	    		var cmd = config.openDirCmd.cmd;
-	    		var args = config.openDirCmd.args;
-	    		var cwd = config.openDirCmd.cwd;
-	    		args = args?args.replace('{file}',path).replace('{dir}',dir).replace('{rootDir}',config.rootDir||''):path;
-	    		args = args.indexOf(',')?args.split(','):[args];
-	    		Util.spawn(cmd,args,cwd);
+	    		layer.open({
+		    		title: '命令',
+		    		area:['500px'],
+		    		content: html,
+		    		btn:['取消']
+		    	});
 	    	}
 	    })
 	    //命令
-	    $('body').on('click', '.cmd li', function(){
-	    	var dir = $(this).closest('tr').find('.dir').data('dir');
-	    	if($(this).hasClass('watch_cmd')){
-	    		spwan('watchCmd');
-	    	}else if($(this).hasClass('build_cmd')){
-	    		spwan('watchCmd');
-	    	}
-	    	function spwan(cmd_){
-	    		if(!config[cmd_]){
-	    			layer.open({
-			    		title: '执行失败',
-			    		content: '请先配置'+cmd_+'命令',
-			    		btn:['确定']
-			    	});
-	    			return;
+	    $('body').on('click', '.cmd', function(){
+	    	var key = $(this).data('key');
+	    	cmdData.cmds.forEach(function(item){
+	    		if(item.key == key){
+	    			try{
+	    				eval(item.code.replace(/\\/g,'\\\\'));
+	    				layer.close(layer.open())
+	    			}catch(e){
+	    				layer.open({
+				    		title: '错误',
+				    		content: e.message,
+				    		btn:['确定']
+				    	});
+	    			}
+	    			
 	    		}
-	    		var cmd = config[cmd_].cmd;
-	    		var args = config[cmd_].args;
-	    		var cwd = config[cmd_].cwd;
-	    		args = args?args.replace('{file}',path).replace('{dir}','').replace('{rootDir}',config.rootDir||''):'';
-	    		args = args && (args.indexOf(',')?args.split(','):[args]);
-	    		Util.spawn(cmd,args,cwd);
-	    	}
+	    	})
 	    })
 	    //全选
 	    $('body').on('click','.all_cb',function(){
@@ -252,7 +205,7 @@
 		var html = $('#taskItem').html();
 		if(datas[userName]){
 			var tasks = datas[userName].tasks;
-			userData = datas[userName];
+			taskData = parent.taskData = datas[userName];
 			$('#taskList').html('');
 			for(var j = 0; j < tasks.length; j++){
 				var item = '';
@@ -283,8 +236,8 @@
 		task.title = $('.in_title').val()||'';
 		task.dir = $('.in_dir').val()||'';
 		task.wiki = $('.in_wiki').val()||''
-		if(userData != null){
-			var tasks = userData.tasks;
+		if(taskData != null){
+			var tasks = taskData.tasks;
 			for(var j = 0; j < tasks.length; j++){
 				if(tasks[j].dir == task.dir){
 					tasks[j].title = task.title;
@@ -308,8 +261,8 @@
 		task.title = $('.in_title').val()||'';
 		task.dir = $('.in_dir').val()||'';
 		task.wiki = $('.in_wiki').val()||''
-		if(userData != null){
-			var tasks = userData.tasks;
+		if(taskData != null){
+			var tasks = taskData.tasks;
 			for(var j = 0; j < tasks.length; j++){
 				if(tasks[j].dir == oldTask.dir){
 					tasks[j].title = task.title;
