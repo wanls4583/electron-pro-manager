@@ -3,8 +3,8 @@ var fs = require('fs');
 var shell = require('electron').shell;
 var userName = $('.pf-user-name',window.parent.document).text();
 var datas = {};
-var cmdData = parent.cmdData;
-var config = parent.config;
+var cmdData = parent.mainPlatform.cmdData;
+var config = parent.mainPlatform.config;
 
 
 Util.loadCmdFile(
@@ -21,7 +21,7 @@ Util.loadCmdFile(
 function initConfig(){
 	Util.loadConfigFile(
 		function(err,data){
-			data && data.length>4 && (config = parent.config = JSON.parse(data)[userName]);
+			data && data.length>4 && (config = parent.mainPlatform.config = JSON.parse(data)[userName]);
 			console.log('config',config);
 			initEvt();
 		},
@@ -64,6 +64,7 @@ function initEvt(){
 		}, function(index){
 			var toDels = [];
 			delItems.each(function(index,dom){
+				index =  $(dom).closest('tr').find('.num').data('index');
 				toDels.push(cmdData.cmds[index]);
 			});
 			for(var i=0;i<toDels.length;i++){
@@ -146,7 +147,7 @@ function initData(){
 	var html = $('#cmdItem').html();
 	if(datas[userName]){
 		var cmds = datas[userName].cmds;
-		cmdData = parent.cmdData = datas[userName];
+		cmdData = parent.mainPlatform.cmdData = datas[userName];
 		$('#cmdList').html('');
 		for(var j = 0; j < cmds.length; j++){
 			var item = '';

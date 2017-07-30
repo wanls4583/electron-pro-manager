@@ -3,11 +3,12 @@
 	var shell = require('electron').shell;
 	var userName = $('.pf-user-name',window.parent.document).text();
 	var datas = {};
-	var taskData = parent.taskData;
-    var config = parent.config;
-    var cmdData = parent.cmdData;
-    var dicData = parent.dicData;
-
+	var taskData = parent.mainPlatform.taskData;
+    var config = parent.mainPlatform.config;
+    var cmdData = parent.mainPlatform.cmdData;
+    var dicData = parent.mainPlatform.dicData;
+    var dicKeyMap = null;
+	var cmdKeyMap = null;
     Util.loadTaskFile(
 		function(err,data){
 			data && data.length>4 && (datas = JSON.parse(data));
@@ -22,7 +23,7 @@
 	function initConfig(){
 		Util.loadConfigFile(
 			function(err,data){
-				data && data.length>4 && (config = parent.config = JSON.parse(data)[userName]);
+				data && data.length>4 && (config = parent.mainPlatform.config = JSON.parse(data)[userName]);
 				console.log('config',config);
 				initEvt();
 			},
@@ -74,6 +75,7 @@
 			}, function(index){
 				var toDels = [];
 				delItems.each(function(index,dom){
+					index =  $(dom).closest('tr').find('.num').data('index');
 					toDels.push(taskData.tasks[index]);
 				})
 				for(var i=0;i<toDels.length;i++){
@@ -129,13 +131,13 @@
 	    	var tpl = $('#cmdTpl');
 	    	if(!cmdData){
 	    		Util.loadCmdFile(function(err,data){
-	    			data && data.length>4 && (cmdData = parent.cmdData = JSON.parse(data)[userName]);
+	    			data && data.length>4 && (cmdData = parent.mainPlatform.cmdData = JSON.parse(data)[userName]);
 	    			dicData && createCmdPanel();
 	    		})
 	    	}
 	    	if(!dicData){
-	    		Util.loadCmdFile(function(err,data){
-	    			data && data.length>4 && (dicData = parent.dicData = JSON.parse(data)[userName]);
+	    		Util.loadDicFile(function(err,data){
+	    			data && data.length>4 && (dicData = parent.mainPlatform.dicData = JSON.parse(data)[userName]);
 	    			cmdData && createCmdPanel();
 	    		})
 	    	}
@@ -164,8 +166,9 @@
 	    	var key = $(this).data('key');
 	    	cmdData.cmds.forEach(function(item){
 	    		if(item.key == key){
+	    			var code = parseCmd(key)
 	    			try{
-	    				eval(item.code.replace(/\\/g,'\\\\'));
+	    				eval(code);
 	    				layer.close(layer.open())
 	    			}catch(e){
 	    				layer.open({
@@ -200,12 +203,46 @@
 	    	shell.openExternal(url);
 	    })
 	}
-
+	//解析命令
+	function parseCmd(cmdkey,$obj){
+		if(!dicKeyMap||!cmdKeyMap){
+			dicKeyMap = {};
+			cmdKeyMap = {};
+			dicData.dics.forEach(function(item){
+				dicKeyMap[item.key] = item.value;
+			})
+			cmdData.cmds.forEach(function(item){
+				cmdKeyMap[item.key] = item.code;
+			})
+			for(key1 in dicKeyMap){
+				for(key2 in dicKeyMap){
+					if(dicKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+						dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2].value);
+					}
+				}
+			}
+			for(key1 in cmdKeyMap){
+				for(key2 in cmdKeyMap){
+					if(cmdKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && cmdKeyMap[key2].indexOf('<%'+key1+'%>')==-1){
+						cmdKeyMap[key1] = cmdKeyMap[key1].replace('<%'+key2+'%>',cmdKeyMap[key2].value+';');
+					}
+				}
+			}
+		}
+		var cmd = cmdKeyMap[cmdkey];
+		var match = cmd.match(/\{[\s\S]+?\}/);
+		for(var i=0 ;match && i<match.length;i++){
+			var dickey = match[i].replace(/\{|\}/g,'');
+			dicKeyMap[dickey] && (cmd = cmd.replace(match[i],dicKeyMap[dickey]));
+		}
+		return cmd.replace(/\\/g,'\\\\')
+		
+	}
 	function initData(){
 		var html = $('#taskItem').html();
 		if(datas[userName]){
 			var tasks = datas[userName].tasks;
-			taskData = parent.taskData = datas[userName];
+			taskData = parent.mainPlatform.taskData = datas[userName];
 			$('#taskList').html('');
 			for(var j = 0; j < tasks.length; j++){
 				var item = '';
