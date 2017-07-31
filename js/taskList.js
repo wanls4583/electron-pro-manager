@@ -4,7 +4,6 @@
 	var userName = $('.pf-user-name',window.parent.document).text();
 	var datas = {};
 	var taskData = parent.mainPlatform.taskData;
-    var config = parent.mainPlatform.config;
     var cmdData = parent.mainPlatform.cmdData;
     var dicData = parent.mainPlatform.dicData;
     var dicKeyMap = null;
@@ -15,40 +14,15 @@
 			data && data.length>4 && (datas = JSON.parse(data));
 			console.log('datas',datas);
 			initData();
-			initConfig();
+			initEvt();
 		},function(){
 			initData();
-	    	initConfig();
+	    	initEvt();
 		}
 	)
-	function initConfig(){
-		if(config){
-			initEvt();
-			return;
-		}
-		Util.loadConfigFile(
-			function(err,data){
-				data && data.length>4 && (config = parent.mainPlatform.config = JSON.parse(data)[userName]);
-				console.log('config',config);
-				initEvt();
-			},
-			function(){
-				initEvt();
-			}
-		)
-	}
-
 	function initEvt(){
 		//添加任务
 		$('body').on('click', '.add', function(){
-			if(!config){
-				layer.open({
-		    		title: '错误',
-		    		content: '请先配置目录',
-		    		btn:['确定']
-		    	});
-		    	return;
-			}
 	    	layer.open({
 	    		title: '添加任务',
 	    		area:['750px'],
@@ -106,14 +80,6 @@
 	    	oldTask.dir = $(this).closest('tr').find('.dir').data('dir');
 	    	oldTask.title = $(this).closest('tr').find('.title').data('title');
 	    	oldTask.wiki = $(this).closest('tr').find('.wiki').data('wiki');
-			if(!config){
-				layer.open({
-		    		title: '错误',
-		    		content: '请先配置目录',
-		    		btn:['确定']
-		    	});
-		    	return;
-			}
 	    	layer.open({
 	    		title: '修改任务',
 	    		area:['750px'],

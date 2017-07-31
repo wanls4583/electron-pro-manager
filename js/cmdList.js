@@ -4,36 +4,18 @@ var shell = require('electron').shell;
 var userName = $('.pf-user-name',window.parent.document).text();
 var datas = {};
 var cmdData = parent.mainPlatform.cmdData;
-var config = parent.mainPlatform.config;
-
 
 Util.loadCmdFile(
 	function(err,data){
 		data && data.length>4 && (datas = JSON.parse(data));
 		console.log('datas',datas);
 		initData();
-		initConfig();
+		initEvt();
 	},function(){
 		initData();
-    	initConfig();
+    	initEvt();
 	}
 )
-function initConfig(){
-	if(config){
-		initEvt();
-		return;
-	}
-	Util.loadConfigFile(
-		function(err,data){
-			data && data.length>4 && (config = parent.mainPlatform.config = JSON.parse(data)[userName]);
-			console.log('config',config);
-			initEvt();
-		},
-		function(){
-			initEvt();
-		}
-	)
-}
 
 function initEvt(){
 	//添加任务
@@ -96,15 +78,6 @@ function initEvt(){
     	oldCmd.key = $(this).closest('tr').find('.key').data('key');
     	oldCmd.title = $(this).closest('tr').find('.title').data('title');
     	oldCmd.code = $(this).closest('tr').find('.code').data('code');
-
-		if(!config){
-			layer.open({
-	    		title: '错误',
-	    		content: '请先配置目录',
-	    		btn:['确定']
-	    	});
-	    	return;
-		}
     	layer.open({
     		title: '修改命令',
     		area:['750px'],
