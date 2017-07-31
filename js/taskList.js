@@ -9,6 +9,7 @@
     var dicData = parent.mainPlatform.dicData;
     var dicKeyMap = null;
 	var cmdKeyMap = null;
+	var currentTask = null;
     Util.loadTaskFile(
 		function(err,data){
 			data && data.length>4 && (datas = JSON.parse(data));
@@ -133,6 +134,7 @@
 	    //打开命令面板
 	    $('body').on('click', '.open_cmd', function(){
 	    	var tpl = $('#cmdTpl');
+	    	var This = this;
 	    	if(!cmdData){
 	    		Util.loadCmdFile(function(err,data){
 	    			data && data.length>4 && (cmdData = parent.mainPlatform.cmdData = JSON.parse(data)[userName]);
@@ -146,7 +148,7 @@
 	    		})
 	    	}
 	    	if(cmdData && dicData){
-	    		createCmdPanel()
+	    		createCmdPanel();
 	    	}
 
 	    	function createCmdPanel(){
@@ -162,15 +164,18 @@
 		    		area:['500px'],
 		    		content: html,
 		    		btn:['取消']
-		    	});
+		    	});	
+		    	var index =  $(This).closest('tr').find('.num').data('index');
+		    	currentTask = taskData.tasks[index];
 	    	}
 	    })
 	    //命令
 	    $('body').on('click', '.cmd', function(){
 	    	var key = $(this).data('key');
+	    	var self = this;
 	    	cmdData.cmds.forEach(function(item){
 	    		if(item.key == key){
-	    			var code = parseCmd(key)
+	    			var code = parseCode(key)
 	    			try{
 	    				eval(code);
 	    				layer.close(layer.open())
@@ -208,7 +213,7 @@
 	    })
 	}
 	//解析命令
-	function parseCmd(cmdkey,$obj){
+	function parseCode(cmdkey){
 		if(!dicKeyMap||!cmdKeyMap){
 			dicKeyMap = {};
 			cmdKeyMap = {};
@@ -220,24 +225,31 @@
 			})
 			for(key1 in dicKeyMap){
 				for(key2 in dicKeyMap){
-					if(dicKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-						dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2].value);
+					if(dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+						dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2]);
 					}
 				}
 			}
 			for(key1 in cmdKeyMap){
 				for(key2 in cmdKeyMap){
 					if(cmdKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && cmdKeyMap[key2].indexOf('<%'+key1+'%>')==-1){
-						cmdKeyMap[key1] = cmdKeyMap[key1].replace('<%'+key2+'%>',cmdKeyMap[key2].value+';');
+						cmdKeyMap[key1] = cmdKeyMap[key1].replace('<%'+key2+'%>',cmdKeyMap[key2]+';');
 					}
 				}
 			}
 		}
 		var cmd = cmdKeyMap[cmdkey];
-		var match = cmd.match(/\{[\s\S]+?\}/);
+		var match = cmd.match(/\{[\s\S]+?\}/g);
 		for(var i=0 ;match && i<match.length;i++){
 			var dickey = match[i].replace(/\{|\}/g,'');
 			dicKeyMap[dickey] && (cmd = cmd.replace(match[i],dicKeyMap[dickey]));
+		}
+		var matches = cmd.match(/\{current\.[\s\S]+?\}/g);
+		if(matches){
+			matches.forEach(function(item){
+				var key = item.match(/\{current\.([\s\S]+?)\}/)[1];
+				cmd = cmd.replace(item,currentTask[key]);
+			})
 		}
 		return cmd.replace(/\\/g,'\\\\')
 		

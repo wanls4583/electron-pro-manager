@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","dics":[{"title":"test","key":"txt","value":"'C:\\Users\\Administrator\\Desktop\\electron-pro-manager\\css\\platform\\login.css'"}]}}
+{"Admin":{"userName":"Admin","dics":[{"title":"千帆_pc","key":"qf_pc","value":"E:\\56\\qianfan"},{"title":"build_pc","key":"build_pc","value":"{qf_pc}/build"}]}}

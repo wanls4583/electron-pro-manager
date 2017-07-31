@@ -10,7 +10,7 @@ var mainPlatform = {
     config:null,
 	init: function(){
         this.bindEvent();
-        this.render(menu['config']);
+        this.render(menu['home']);
 	},
 	bindEvent: function(){
         var menuName = $('.pf-nav').find('.current').data('menu');
@@ -149,7 +149,7 @@ var mainPlatform = {
             function add(){
                 parseDic();
                 var menu = {
-                    cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:'',
+                    cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:process.cwd(),
                     title: '',
                     icon: 'imgs/main/l03.png',
                     href: 'open_cmd',

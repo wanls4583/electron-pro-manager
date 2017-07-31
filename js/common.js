@@ -42,15 +42,35 @@ var Util = {
     		var self = this;
     		var resultCwd = '';
     		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
-    		//切换目录命令特殊处理
+    		if(cwd && !fs.existsSync(cwd)){
+		    	throw new Error('运行目录'+cwd+'不存在');
+    		}
+    		if($dom===true){
+    			var menu = {
+                    cwd: cwd||process.cwd(),
+                    title: '',
+                    icon: 'imgs/main/l03.png',
+                    href: 'open_cmd',
+                    isCurrent: true
+                }
+    			// window.mainPlatform && mainPlatform.addMenu(menu) || parent.mainPlatform && parent.mainPlatform.addMenu(menu);
+    			// $dom = $('.current_win',parent.document).find('.out');
+    			$dom = false
+    		}
+    		// 切换目录命令特殊处理
     		if(cmd=='cd'){
     			resultCwd = this.parsePathForWin32(cwd,arg);
-    			$('.current_menu').find('.current').data('cwd',resultCwd);
-    			$dom.closest('.opened_cmd').data('cwd',resultCwd);
+    			if(fs.existsSync(resultCwd)){
+    				$('.current_menu').find('.current').data('cwd',resultCwd);
+    				$dom.closest('.opened_cmd').data('cwd',resultCwd);
+    			}
+    			
     		}else if(cmd=='cd.'||cmd=='cd..'){
     			resultCwd = this.parsePathForWin32(cwd,[cmd.substr(2)]);
-    			$('.current_menu').find('.current').data('cwd',resultCwd);
-    			$dom.closest('.opened_cmd').data('cwd',resultCwd);
+    			if(fs.existsSync(resultCwd)){
+    				$('.current_menu').find('.current').data('cwd',resultCwd);
+    				$dom.closest('.opened_cmd').data('cwd',resultCwd);
+    			}
     		}else if(cmd=='debug'){
     			remote.getCurrentWindow().toggleDevTools();
     		}
@@ -64,8 +84,10 @@ var Util = {
     			$openedCmd = $dom.closest('.opened_cmd');
     			arg ? (msg = msg+' '+arg.join(' ')+'<br/>'):(msg = msg+'<br/>');
     			$dom.append(self.replaceReturn(msg));
-    			resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ')
-    			&& $openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+    			if(fs.existsSync(resultCwd)){
+    				resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ')
+    				&& $openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+    			}
     			$openedCmd.find('.wrap')[0].scrollIntoView(true);
     		}
 
