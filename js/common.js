@@ -23,6 +23,7 @@ var remote = require('electron').remote
 var dialog = remote.dialog;
 var path = require("path"); 
 var shell = require('electron').shell; 
+var fs = require('fs');
 globalDatas.configFilePath = "data/config.txt";
 globalDatas.taskFilePath = "data/task.txt";
 globalDatas.dicFilePath = "data/dic.txt";
@@ -50,6 +51,8 @@ var Util = {
     			resultCwd = this.parsePathForWin32(cwd,[cmd.substr(2)]);
     			$('.current_menu').find('.current').data('cwd',resultCwd);
     			$dom.closest('.opened_cmd').data('cwd',resultCwd);
+    		}else if(cmd=='debug'){
+    			remote.getCurrentWindow().toggleDevTools();
     		}
 
     		
@@ -66,7 +69,7 @@ var Util = {
     			$openedCmd.find('.wrap')[0].scrollIntoView(true);
     		}
 
-    		if(cmd==='cd'||cmd==='cd.'||cmd==='cd..'){
+    		if(cmd==='cd'||cmd==='cd.'||cmd==='cd..'||cmd=='debug'){
     			return;
     		}
 
@@ -288,6 +291,17 @@ var Util = {
 		},
 		writeCmdFile: function(data,callback){
 			this.writeFile(globalDatas.cmdFilePath,data,callback);
+		},
+		refreshNeedCmdWin: function(){
+			$('.need_cmd',parent.document).each(function(index,item){
+				item.contentWindow.location.reload(true);
+			})
+			
+		},
+		refreshNeedDicWin: function(){
+			$('.need_dic',parent.document).each(function(index,item){
+				item.contentWindow.location.reload(true);
+			})
 		}
     }
     Util.init();

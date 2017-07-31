@@ -5,6 +5,8 @@ var menu = {
 			title: '项目',
 			icon: 'imgs/main/l01.png',
 			href: 'taskList.html',
+			dicClass: 'need_dic',
+			cmdClass: 'need_cmd',
 			isCurrent: true
 		}]
 	},
@@ -19,10 +21,6 @@ var menu = {
 			title: '字典',
 			icon: 'imgs/main/l17.png',
 			href: 'dicList.html',
-		},{
-			title: '配置',
-			icon: 'imgs/main/l17.png',
-			href: 'config.html',
 		}]
 	}
 };

@@ -1,3 +1,6 @@
+var remote = require('electron').remote;
+var Menu = remote.Menu;
+var MenuItem = remote.MenuItem;
 var mainPlatform = {
     menus: [],
     openedWin: {},
@@ -6,21 +9,16 @@ var mainPlatform = {
     taskData:null,
     config:null,
 	init: function(){
+        this.bindEvent();
         this.render(menu['config']);
-		this.bindEvent();
 	},
 	bindEvent: function(){
         var menuName = $('.pf-nav').find('.current').data('menu');
 		var self = this;
-        var firstIframe = $('iframe');
         var menus = this.menus;
         var cmdHistory = [];
         var cmdHistoryIndex = 0;
-        // 第一个窗口
-        $('.sider-nav li').first().data('src','open_iframe_'+menuName+'_'+menus[menuName].iframeCount);
-        firstIframe.addClass('current_win');
-        self.openedWin['open_iframe_'+menuName+'_'+menus[menuName].iframeCount] = firstIframe;
-        menus[menuName].iframeCount++;
+        var dicKeyMap = null;
 		// 顶部大菜单单击事件
 		$(document).on('click', '.pf-nav-item', function() {
             $('.pf-nav-item').removeClass('current');
@@ -61,7 +59,9 @@ var mainPlatform = {
             	if(src.indexOf('open_iframe')!=-1){
             		self.openedWin[src]&&self.openedWin[src].addClass('current_win');
             	}else{
-            		var html = '<iframe class="current_win" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>'
+                    var dicClass = $(this).data('dicclass') || '';
+                    var cmdClass = $(this).data('cmdclass') || '';
+            		var html = '<iframe class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>'
             		$('#pf-page').append(html);
             		$(this).data('src','open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount);
             		self.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
@@ -69,6 +69,21 @@ var mainPlatform = {
             	}
             }
         });
+        $(document).on('contextmenu', '.sider-nav li', function(){
+            var This = this;
+            var menu = new Menu();
+            menu.append(new MenuItem({ label: '移除命令窗口', click: function(e){
+                var src = $(This).data('src');
+                if(src.indexOf('open_cmd')!=-1 && self.openedWin[src]){
+                    if($(This).hasClass('current')){
+                        $('.sider-nav li').first().trigger('click');
+                    }
+                    $(This).remove();
+                    self.openedWin[src].remove();
+                }
+            }}));
+            menu.popup(remote.getCurrentWindow());
+        })
         $(document).on('click','.opened_cmd',function(){
         	$(this).find('input').focus();
         });
@@ -120,11 +135,30 @@ var mainPlatform = {
         		return args;
         	}
         });
-        // $(document).on('keypress','.opened_cmd input',function(){
-        // 	var $openedCmd = $(this).closest('.opened_cmd');
-        // 	if($openedCmd.find('.wrap').hasClass('choke'))
-        // 	 	$openedCmd.find('input').val('wocao');
-        // })
+        $(document).on('click','.add_cmd',function(){
+            if(!this.dicData){
+                var userName = $('.pf-user-name',window.parent.document).text();
+                Util.loadDicFile(function(err,data){
+                    data && data.length>4 && (self.dicData = JSON.parse(data)[userName]);
+                    add();
+                })
+            }else{
+                add();
+            }
+            
+            function add(){
+                parseDic();
+                var menu = {
+                    cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:'',
+                    title: '',
+                    icon: 'imgs/main/l03.png',
+                    href: 'open_cmd',
+                    isCurrent: true
+                }
+                self.addMenu(menu);
+            }
+        });
+
         $(document).on('click', '.pf-logout', function() {
             layer.confirm('您确定要退出吗？', {
               icon: 4,
@@ -136,7 +170,22 @@ var mainPlatform = {
 
         $(document).on('click', '.pf-modify-pwd', function() {
             $('#pf-page').find('iframe').eq(0).attr('src', 'backend/modify_pwd.html')
-        });   
+        });
+        function parseDic(){
+            if(!dicKeyMap){
+                dicKeyMap = {};
+                self.dicData.dics.forEach(function(item){
+                    dicKeyMap[item.key] = item.value;
+                })
+                for(key1 in dicKeyMap){
+                    for(key2 in dicKeyMap){
+                        if(dicKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+                            dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2].value);
+                        }
+                    }
+                }
+            }
+        }
 	},
 
 	render: function(menu){
@@ -148,31 +197,29 @@ var mainPlatform = {
             this.menus[menuName].find('li.current').trigger('click');
             return;
         }
+        var cmdClass = menu.menu[0].cmdClass || '';
+        var dicClass = menu.menu[0].dicClass || '';
         var navHtml = ['<div class="current_menu menu_wrap munu_'+menuName+'"><h2 class="pf-model-name"><span class="pf-sider-icon"></span><span class="pf-name">'+ menu.title +'</span></h2>'];
-        var winHtml = '<iframe class="current_win" src="'+menu.menu[0].href+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>';
-		
+       
         navHtml.push('<ul class="sider-nav">');
 		
         for(var i = 0, len = menu.menu.length; i < len; i++){
 			if(menu.menu[i].isCurrent){
 				current = menu.menu[i];
-				navHtml.push('<li class="current" title="'+ menu.menu[i].title +'" data-src="'+ menu.menu[i].href +'"><a href="javascript:;"><img src="'+ menu.menu[i].icon +'"><span class="sider-nav-title">'+ menu.menu[i].title +'</span><i class="iconfont">&#xe611;</i></a></li>');
+				navHtml.push('<li class="current" title="'+ menu.menu[i].title +'" data-src="'+ menu.menu[i].href +'" data-dicclass="'+dicClass+'" data-cmdclass="'+cmdClass+'"><a href="javascript:;"><img src="'+ menu.menu[i].icon +'"><span class="sider-nav-title">'+ menu.menu[i].title +'</span><i class="iconfont">&#xe611;</i></a></li>');
 			}else{
-				navHtml.push('<li data-src="'+ menu.menu[i].href +'" title="'+ menu.menu[i].title +'"><a href="javascript:;"><img src="'+ menu.menu[i].icon +'"><span class="sider-nav-title">'+ menu.menu[i].title +'</span><i class="iconfont">&#xe611;</i></a></li>');
+				navHtml.push('<li data-src="'+ menu.menu[i].href +'" title="'+ menu.menu[i].title +'" data-dicclass="'+dicClass+'" data-cmdclass="'+cmdClass+'"><a href="javascript:;"><img src="'+ menu.menu[i].icon +'"><span class="sider-nav-title">'+ menu.menu[i].title +'</span><i class="iconfont">&#xe611;</i></a></li>');
 			}
 		}
 		navHtml.push('</ul></div>');
 
-        $('#pf-page').append(winHtml);
 		$('#pf-sider').append(navHtml.join(''));
 
         this.menus[menuName] = $('.current_menu');
         this.menus[menuName].iframeCount = 1;
         this.menus[menuName].cmdCount = 1;
 
-        $(this).data('src','open_iframe_'+this.menus[menuName]+'_'+this.menus[menuName].iframeCount);
-        this.openedWin['open_iframe_'+menuName+'_'+this.menus[menuName].iframeCount] = $('.current_win');
-        $('.current_menu').find('.sider-nav').find('li').first().trigger('click');
+        $('.current_menu').find('.sider-nav').find('li.current').trigger('click');
         this.menus[menuName].iframeCount++;
 	},
 

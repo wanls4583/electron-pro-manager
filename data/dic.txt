@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","dics":[{"title":"test","key":"txt","value":"'C:\\Users\\Administrator\\Desktop\\electron-pro-manager\\data\\dic.txt'"}]}}
+{"Admin":{"userName":"Admin","dics":[{"title":"test","key":"txt","value":"'C:\\Users\\Administrator\\Desktop\\electron-pro-manager\\css\\platform\\login.css'"}]}}

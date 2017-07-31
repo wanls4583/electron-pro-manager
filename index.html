@@ -92,25 +92,5 @@
         
       </script>
     <![endif]-->  
-    <script type="text/javascript">
-        var fs = require('fs');
-        var config = null;
-        var exists = fs.existsSync(globalDatas.configFilePath);
-        var userName = $('.pf-user-name').text();
-        if(exists){
-            var data = fs.readFileSync(globalDatas.configFilePath,'UTF-8');
-            data && (config = JSON.parse(data));
-        }
-        $('.add_cmd').on('click',function(){
-            var menu = {
-                cwd: config[userName]?config[userName].rootDir:'',
-                title: '',
-                icon: 'imgs/main/l03.png',
-                href: 'open_cmd',
-                isCurrent: true
-            }
-            mainPlatform.addMenu(menu);
-        })
-    </script>
 </body> 
 </html>

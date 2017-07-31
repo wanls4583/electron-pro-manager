@@ -19,6 +19,10 @@ Util.loadCmdFile(
 	}
 )
 function initConfig(){
+	if(config){
+		initEvt();
+		return;
+	}
 	Util.loadConfigFile(
 		function(err,data){
 			data && data.length>4 && (config = parent.mainPlatform.config = JSON.parse(data)[userName]);
@@ -51,6 +55,7 @@ function initEvt(){
 				    }
 			    	layer.close(index);
 			    	initData();
+			    	Util.refreshNeedCmdWin();
 				})
 	    	}
     	});
@@ -80,6 +85,7 @@ function initEvt(){
 			        return;
 			    }
 		    	initData();
+		    	Util.refreshNeedCmdWin();
 			});
 			layer.close(index);
 		})
@@ -116,6 +122,7 @@ function initEvt(){
 				    }
 			    	layer.close(index);
 			    	initData();
+			    	Util.refreshNeedCmdWin();
 				});
 	    	}
     	});
