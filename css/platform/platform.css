@@ -60,6 +60,9 @@ html{height:100%;/* background:#0c9d72 */}#pf-hd{height:70px;background:url('../
 	overflow: auto;
 	padding: 10px;
 }
+.opened_cmd .out{
+	line-height: 18px;
+}
 .opened_cmd span{
 	color: rgb(0,255,0);
 }

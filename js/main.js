@@ -8,6 +8,7 @@ var mainPlatform = {
     dicData:null,
     taskData:null,
     config:null,
+    process:{},
 	init: function(){
         this.bindEvent();
         this.render(menu['home']);
@@ -47,10 +48,10 @@ var mainPlatform = {
             		$(this).data('src','open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount);
             		self.openedWin['open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount] = openedCmd;
             		openedCmd.find('input').focus();
-                    openedCmd.find('input').css('padding-left',openedCmd.find('.wrap').find('span').width()+'px')
+                    openedCmd.find('input').css('padding-left',openedCmd.find('.wrap').find('span').width()+5+'px')
             		if(!$(this).attr('title')){
             			$(this).attr('title','命令窗口'+menuName+'_'+self.menus[menuName].cmdCount);
-            			openedCmd.attr('title','命令窗口'+menuName+'_'+self.menus[menuName].cmdCount);
+            			openedCmd.attr('title',menuName+'_'+self.menus[menuName].cmdCount);
             			$(this).find('.sider-nav-title').html('命令窗口'+self.menus[menuName].cmdCount);
             		}
             		self.menus[menuName].cmdCount++;
@@ -93,6 +94,9 @@ var mainPlatform = {
         	var args = null;
         	var cwd = $openedCmd.data('cwd');
             var cmd = '';
+            if((ev.keyCode == 'C'.charCodeAt(0)||ev.keyCode == 'c'.charCodeAt(0)) && ev.ctrlKey){
+                Util.spawn('exit',null,null,$openedCmd.find('.out'));
+            }
         	if($openedCmd.find('.wrap').hasClass('choke')){
                 return false;
             }

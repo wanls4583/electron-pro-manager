@@ -49,21 +49,32 @@ var Util = {
 		console.log(cmd,arg,cwd)
 		var self = this;
 		var resultCwd = '';
-		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
-		if(cwd && !fs.existsSync(cwd)){
-	    	throw new Error('运行目录'+cwd+'不存在');
-		}
 		if($dom===true){
 			var menu = {
-                cwd: cwd||process.cwd(),
+                cwd: cwd||window.process&&process.cwd()||parent.process&&parent.process.cwd(),
                 title: '',
                 icon: 'imgs/main/l03.png',
                 href: 'open_cmd',
                 isCurrent: true
             }
+            if(fs.existsSync(cmd)){
+            	menu.cwd = cmd;
+            }else{
+            	var index = cmd.lastIndexOf('\\');
+            	index = index > cmd.lastIndexOf('/') ? index : cmd.lastIndexOf('/');
+            	if(index>0 && fs.existsSync(cmd.substring(0,index))){
+            		menu.cwd = cmd.substring(0,index);
+            	}
+            }
 			window.mainPlatform && mainPlatform.addMenu(menu) || parent.mainPlatform && parent.mainPlatform.addMenu(menu);
 			$dom = $('.current_win',parent.document).find('.out');
+			cwd = menu.cwd;
 		}
+		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
+		if(cwd && !fs.existsSync(cwd)){
+	    	throw new Error('运行目录'+cwd+'不存在');
+		}
+		
 		// 切换目录命令特殊处理
 		if(cmd=='cd'){
 			resultCwd = this.parsePathForWin32(cwd,arg);
@@ -80,6 +91,10 @@ var Util = {
 			}
 		}else if(cmd=='debug'){
 			remote.getCurrentWindow().toggleDevTools();
+		}else if(cmd=='exit'){
+			var title = $('.current_win',parent.document).attr('title');
+			this.exec('taskkill /F /T /pid '+parent.mainPlatform.process[title].pid);
+			return;
 		}
 
 		
@@ -92,8 +107,7 @@ var Util = {
 			arg ? (msg = msg+' '+arg.join(' ')+'<br/>'):(msg = msg+'<br/>');
 			$dom.append(self.replaceReturn(msg));
 			if(fs.existsSync(resultCwd)){
-				resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ')
-				&& $openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+				resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ') && removeChoke();
 			}
 			$openedCmd.find('.wrap')[0].scrollIntoView(true);
 			addChoke();
@@ -105,6 +119,8 @@ var Util = {
 		}
 
 		workerProcess = child_process.spawn(cmd,arg||[],(cwd&&{cwd:cwd})||{});
+
+		parent.mainPlatform.process[$('.current_win',parent.document).attr('title')] = workerProcess;
 
 		workerProcess.on('error',function(){
 			// self.exec(cmd+' '+(arg&&arg.join(' ')),$dom);
@@ -156,7 +172,7 @@ var Util = {
 		}
 		function removeChoke(){
 			$openedCmd.find('.wrap').removeClass('choke');
-			$openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+'px');
+			$openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+5+'px');
 		}
 		return workerProcess;
 	},
