@@ -57,15 +57,15 @@ var Util = {
                 href: 'open_cmd',
                 isCurrent: true
             }
-            if(fs.existsSync(cmd)){
-            	menu.cwd = cmd;
-            }else{
-            	var index = cmd.lastIndexOf('\\');
-            	index = index > cmd.lastIndexOf('/') ? index : cmd.lastIndexOf('/');
-            	if(index>0 && fs.existsSync(cmd.substring(0,index))){
-            		menu.cwd = cmd.substring(0,index);
-            	}
-            }
+            // if(fs.existsSync(cmd)){
+            // 	menu.cwd = cmd;
+            // }else{
+            // 	var index = cmd.lastIndexOf('\\');
+            // 	index = index > cmd.lastIndexOf('/') ? index : cmd.lastIndexOf('/');
+            // 	if(index>0 && fs.existsSync(cmd.substring(0,index))){
+            // 		menu.cwd = cmd.substring(0,index);
+            // 	}
+            // }
 			window.mainPlatform && mainPlatform.addMenu(menu) || parent.mainPlatform && parent.mainPlatform.addMenu(menu);
 			$dom = $('.current_win',parent.document).find('.out');
 			cwd = menu.cwd;
