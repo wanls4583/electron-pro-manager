@@ -20,14 +20,23 @@
 		line-height: 25px;
 		margin-left: 8px;
 	}
-	.kv-content textarea{
+	.kv-content .in_code{
 		display: block;
 		width: 100%;
 		box-sizing: border-box;
-		height: initial !important;
+		height: 200px;
+		border:1px solid rgb(194, 194, 194);
+		
+	}
+	.kv-content .in_code:hover{
+		border: 1px solid rgb(229, 151, 0);
+		border-radius: 2px;
 	}
 	.grid thead th{
 		min-width: 80px;
+	}
+	.code{
+		min-width: 200px;
 	}
 </style>
 </head> 
@@ -102,7 +111,7 @@
 						代码：
 					</td>
 					<td class="kv-content" style="padding: 10px;">
-					<textarea name="" id="" cols="30" rows="10" class="in_code"></textarea>
+						<div id="in_code" class="in_code"></div>
 					</td>
 				</tr>
 			</tbody>
@@ -124,6 +133,8 @@
     <script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/lib/layer/layer.js"></script>
 	<script type="text/javascript" src="js/common.js"></script>
+	<script src="js/lib/ace/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/lib/ace/src-noconflict/ext-static_highlight.js"></script>
 	<script type="text/javascript" src="js/cmdList.js"></script>
     
 </body> 
