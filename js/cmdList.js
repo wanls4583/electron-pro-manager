@@ -4,7 +4,7 @@ var shell = require('electron').shell;
 var userName = $('.pf-user-name',window.parent.document).text();
 var datas = {};
 var cmdData = parent.mainPlatform.cmdData;
-
+var editor = null;
 Util.loadCmdFile(
 	function(err,data){
 		data && data.length>4 && (datas = JSON.parse(data));
@@ -41,7 +41,10 @@ function initEvt(){
 				})
 	    	}
     	});
-    })
+    	editor = ace.edit("in_code");
+	    editor.setTheme("ace/theme/clouds");
+	    editor.session.setMode("ace/mode/javascript");
+    })	
 	//删除任务
     $('body').on('click', '.del',function(){
     	var delItems = $('.item_cb:checked');
@@ -77,7 +80,7 @@ function initEvt(){
     	var oldCmd = {};
     	oldCmd.key = $(this).closest('tr').find('.key').data('key');
     	oldCmd.title = $(this).closest('tr').find('.title').data('title');
-    	oldCmd.code = $(this).closest('tr').find('.code').data('code');
+    	oldCmd.code = $(this).closest('tr').find('.code').html();
     	layer.open({
     		title: '修改命令',
     		area:['750px'],
@@ -101,8 +104,10 @@ function initEvt(){
     	});
     	$('.in_title').val(oldCmd.title);
 		$('.in_key').val(oldCmd.key);
-		$('.in_code').val(oldCmd.code);
-
+		$('.in_code').html(oldCmd.code);
+		editor = ace.edit("in_code");
+	    editor.setTheme("ace/theme/clouds");
+	    editor.session.setMode("ace/mode/javascript");
     })
     
     //全选
@@ -137,8 +142,19 @@ function initData(){
 			item = item.replace('<td class="key"></td>','<td data-key="'+cmds[j].key+'" class="key">'+cmds[j].key+'</td>');
 			$('#cmdList').append(item);
 			$('#cmdList').find('.code').last().data('code',cmds[j].code);
-		} 
-
+		}
+		//代码高亮
+		var highlight = ace.require("ace/ext/static_highlight")
+	    var dom = ace.require("ace/lib/dom")
+	    $('.code pre').each(function(index,dom){
+			highlight(dom, {
+	            mode: 'ace/mode/javascript',
+	            theme: 'ace/theme/clouds',
+	            // startLineNumber: 1,
+	            // showGutter: true,
+	            trim: true
+	        });
+	    })
 	}
 	checkBoxReset();
 }
@@ -159,7 +175,7 @@ function getAddData(){
 	var existUser = false;
 	cmd.title = $('.in_title').val()||'';
 	cmd.key = $('.in_key').val()||'';
-	cmd.code = $('.in_code').val()||''
+	cmd.code = editor.getValue()||''
 	if(cmdData != null){
 		var cmds = cmdData.cmds;
 		for(var j = 0; j < cmds.length; j++){
@@ -184,7 +200,7 @@ function getModifyData(oldCmd){
 	var cmd = {};
 	cmd.title = $('.in_title').val()||'';
 	cmd.key = $('.in_key').val()||'';
-	cmd.code = $('.in_code').val()||''
+	cmd.code = editor.getValue()||''
 	if(cmdData != null){
 		var cmds = cmdData.cmds;
 		for(var j = 0; j < cmds.length; j++){
