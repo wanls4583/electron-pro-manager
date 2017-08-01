@@ -138,7 +138,7 @@ function initData(){
 			var item = '';
 			item = html.replace('<td class="num"></td>','<td data-index="'+j+'" class="num">'+(j+1)+'</td>');
 			item = item.replace('<td class="title"></td>','<td data-title="'+cmds[j].title+'" class="title">'+cmds[j].title+'</td>');
-			item = item.replace('<td class="code"></td>','<td class="code">'+Util.replaceReturn(cmds[j].code)+'</td>');
+			item = item.replace('<td class="code"></td>','<td class="code">'+cmds[j].code+'</td>');
 			item = item.replace('<td class="key"></td>','<td data-key="'+cmds[j].key+'" class="key">'+cmds[j].key+'</td>');
 			$('#cmdList').append(item);
 			$('#cmdList').find('.code').last().data('code',cmds[j].code);
@@ -146,7 +146,7 @@ function initData(){
 		//代码高亮
 		var highlight = ace.require("ace/ext/static_highlight")
 	    var dom = ace.require("ace/lib/dom")
-	    $('.code pre').each(function(index,dom){
+	    $('.code').each(function(index,dom){
 			highlight(dom, {
 	            mode: 'ace/mode/javascript',
 	            theme: 'ace/theme/clouds',
