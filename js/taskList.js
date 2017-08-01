@@ -6,9 +6,7 @@
 	var taskData = parent.mainPlatform.taskData;
     var cmdData = parent.mainPlatform.cmdData;
     var dicData = parent.mainPlatform.dicData;
-    var dicKeyMap = null;
-	var cmdKeyMap = null;
-	var currentTask = null;
+
     Util.loadTaskFile(
 		function(err,data){
 			data && data.length>4 && (datas = JSON.parse(data));
@@ -132,7 +130,7 @@
 		    		btn:['取消']
 		    	});	
 		    	var index =  $(This).closest('tr').find('.num').data('index');
-		    	currentTask = taskData.tasks[index];
+		    	Util.currentTask = taskData.tasks[index];
 	    	}
 	    })
 	    //命令
@@ -180,43 +178,18 @@
 	}
 	//解析命令
 	function parseCode(cmdkey){
-		if(!dicKeyMap||!cmdKeyMap){
-			dicKeyMap = {};
-			cmdKeyMap = {};
+		if(!Util.dicKeyMap||!Util.cmdKeyMap){
+			Util.dicKeyMap = {};
+			Util.cmdKeyMap = {};
 			dicData.dics.forEach(function(item){
-				dicKeyMap[item.key] = item.value;
+				Util.dicKeyMap[item.key] = item.value;
 			})
 			cmdData.cmds.forEach(function(item){
-				cmdKeyMap[item.key] = item.code;
-			})
-			for(key1 in dicKeyMap){
-				for(key2 in dicKeyMap){
-					if(dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-						dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2]);
-					}
-				}
-			}
-			for(key1 in cmdKeyMap){
-				for(key2 in cmdKeyMap){
-					if(cmdKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && cmdKeyMap[key2].indexOf('<%'+key1+'%>')==-1){
-						cmdKeyMap[key1] = cmdKeyMap[key1].replace('<%'+key2+'%>',cmdKeyMap[key2]+';');
-					}
-				}
-			}
-		}
-		var cmd = cmdKeyMap[cmdkey];
-		var match = cmd.match(/\{[\s\S]+?\}/g);
-		for(var i=0 ;match && i<match.length;i++){
-			var dickey = match[i].replace(/\{|\}/g,'');
-			dicKeyMap[dickey] && (cmd = cmd.replace(match[i],dicKeyMap[dickey]));
-		}
-		var matches = cmd.match(/\{current\.[\s\S]+?\}/g);
-		if(matches){
-			matches.forEach(function(item){
-				var key = item.match(/\{current\.([\s\S]+?)\}/)[1];
-				cmd = cmd.replace(item,currentTask[key]);
+				Util.cmdKeyMap[item.key] = item.code;
 			})
 		}
+		var cmd = Util.cmdKeyMap[cmdkey];
+
 		return cmd.replace(/\\/g,'\\\\')
 		
 	}

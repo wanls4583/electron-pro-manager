@@ -29,10 +29,13 @@ globalDatas.taskFilePath = "data/task.txt";
 globalDatas.dicFilePath = "data/dic.txt";
 globalDatas.cmdFilePath = 'data/cmd.txt';
 var Util = {
+	dicKeyMap: null,
+	cmdKeyMap: null,
+	currentTask: null,
 	//初始化对外接口
 	init:function(){
 		var self = this;
-		window.spawn = function(){
+		window.exec = function(){
 			self.spawn.apply(self,arguments);
 		}
 		window.createFile = function(){
@@ -40,6 +43,12 @@ var Util = {
 		}
 		window.mkdirs = function(){
 			self.mkdirs.apply(self,arguments);
+		}
+		window.getDicValue = function(){
+			self.getDicValue.apply(self,arguments);
+		}
+		window.importCode = function(){
+			self.importCode.apply(self,arguments);
 		}
 	},
 	replaceReturn : function(str){
@@ -356,6 +365,43 @@ var Util = {
 		$('.need_dic',parent.document).each(function(index,item){
 			item.contentWindow.location.reload(true);
 		})
+	},
+	getDicValue: function(key){
+		if(!this.dicKeyMap){
+			this.dicKeyMap = {};
+			parent.mainPlatform.dicData.dics.forEach(function(item){
+				this.dicKeyMap[item.key] = item.value;
+			})
+			for(key1 in this.dicKeyMap){
+				for(key2 in this.dicKeyMap){
+					if(this.dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && this.dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+						this.dicKeyMap[key1] = this.dicKeyMap[key1].replace('{'+key2+'}',this.dicKeyMap[key2]);
+					}
+				}
+			}
+		}
+		var value = '';
+		var matche = key.match(/current\.([\s\S])+?/);
+		if(matche){
+			value = this.currentTask[matche[1]];
+		}else if(this.dicKeyMap[key]){
+			value = this.dicKeyMap[key];
+		}else{
+			throw new Error('字典:'+key+' 不存在');
+		}
+		return value;
+	},
+	importCode: function(key){
+		if(!this.cmdKeyMap){
+			this.cmdKeyMap = {};
+			parent.mainPlatform.cmdData.cmds.forEach(function(item){
+				this.cmdKeyMap[item.key] = item.code;
+			})
+		}
+		if(!this.cmdKeyMap[key]){
+			throw new Error('命令:'+key+' 不存在');
+		}
+		eval(cmdKeyMap[key]);
 	}
 }
 Util.init();
