@@ -45,6 +45,11 @@ function initEvt(){
     	editor = ace.edit("in_code");
 	    editor.setTheme("ace/theme/clouds");
 	    editor.session.setMode("ace/mode/javascript");
+	    editor.setOptions({
+	        enableBasicAutocompletion: true,
+	        enableSnippets: true,
+	        enableLiveAutocompletion: true
+	    });
     })	
 	//删除任务
     $('body').on('click', '.del',function(){
@@ -109,6 +114,11 @@ function initEvt(){
 		editor = ace.edit("in_code");
 	    editor.setTheme("ace/theme/clouds");
 	    editor.session.setMode("ace/mode/javascript");
+	    editor.setOptions({
+	        enableBasicAutocompletion: true,
+	        enableSnippets: true,
+	        enableLiveAutocompletion: true
+	    });
     })
     
     //全选
@@ -128,7 +138,7 @@ function initEvt(){
     	}
     })
 }
-//设置自动提示代码
+//设置自定义代码提示
 function setCompleteData(data) {
     var langTools = ace.require("ace/ext/language_tools");
     langTools.addCompleter({
