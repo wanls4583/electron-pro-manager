@@ -163,7 +163,7 @@ var mainPlatform = {
             }
         });
 
-        $(document).on('click', '.pf-logout', function() {
+        /*$(document).on('click', '.pf-logout', function() {
             layer.confirm('您确定要退出吗？', {
               icon: 4,
 			  title: '确定退出' //按钮
@@ -173,8 +173,8 @@ var mainPlatform = {
         });
 
         $(document).on('click', '.pf-modify-pwd', function() {
-            $('#pf-page').find('iframe').eq(0).attr('src', 'backend/modify_pwd.html')
-        });
+            
+        });*/
         function parseDic(){
             if(!dicKeyMap){
                 dicKeyMap = {};
