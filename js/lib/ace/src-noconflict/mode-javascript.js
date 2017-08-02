@@ -80,7 +80,7 @@ var JavaScriptHighlightRules = function(options) {
         "constant.language":
             "null|Infinity|NaN|undefined",
         "support.function":
-            "alert|spawn",
+            "alert|exec|createFile|mkdirs|getDicValue|importCode",
         "constant.language.boolean": "true|false"
     }, "identifier");
     var kwBeforeRe = "case|do|else|finally|in|instanceof|return|throw|try|typeof|yield|void";

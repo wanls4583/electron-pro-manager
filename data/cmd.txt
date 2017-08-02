@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","cmds":[{"title":"监听scss","key":"watch_scss","code":"spawn('gulp.cmd',['watch','--special/{current.dir}'],'{build_pc}',true)"},{"title":"test","key":"test","code":"spawn('D:\\openresty\\nginx',null,null,true)\nconsole.log('hehe')\n"}]}}
+{"Admin":{"userName":"Admin","cmds":[{"title":"监听scss","key":"watch_scss","code":"exec('gulp.cmd',['watch','--special/{current.dir}'],'{build_pc}',true);\n"},{"title":"test","key":"test","code":"exec('nginx',null,'D:\\openresty',true);"}]}}
