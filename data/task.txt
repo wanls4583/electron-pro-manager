@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","tasks":[{"title":"主播升级有礼","dir":"upgrade","wiki":""}]}}
+{"Admin":{"userName":"Admin","tasks":[{"title":"禁播房页面","dir":"ban","wiki":""}]}}
