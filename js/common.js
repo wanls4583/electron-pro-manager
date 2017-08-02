@@ -35,8 +35,12 @@ var Util = {
 	//初始化对外接口
 	init:function(){
 		var self = this;
-		window.exec = function(){
-			self.spawn.apply(self,arguments);
+		window.exec = function(cmdKey){
+			var code = self.importCode(cmdKey);
+			if(code && arguments.length==1){
+				eval(code);
+			}else
+				self.spawn.apply(self,arguments);
 		}
 		window.createFile = function(){
 			self.createFile.apply(self,arguments);
@@ -45,19 +49,17 @@ var Util = {
 			self.mkdirs.apply(self,arguments);
 		}
 		window.getDicValue = function(){
-			self.getDicValue.apply(self,arguments);
-		}
-		window.importCode = function(){
-			self.importCode.apply(self,arguments);
+			return self.getDicValue.apply(self,arguments);
 		}
 	},
 	replaceReturn : function(str){
 		return str.replace(/\r\n|\r|\n/g,'<br/>')
 	},
 	spawn : function(cmd,arg,cwd,$dom){
-		console.log(cmd,arg,cwd)
+		console.log('spawn:',cmd,arg,cwd)
 		var self = this;
 		var resultCwd = '';
+		
 		if($dom===true){
 			var menu = {
                 cwd: cwd||window.process&&process.cwd()||parent.process&&parent.process.cwd(),
@@ -86,15 +88,15 @@ var Util = {
 		
 		// 切换目录命令特殊处理
 		if(cmd=='cd'){
-			resultCwd = this.parsePathForWin32(cwd,arg);
-			if(fs.existsSync(resultCwd)){
+			resultCwd = this.parsePathForWin32(cwd,arg[0]);
+			if(resultCwd){
 				$('.current_menu').find('.current').data('cwd',resultCwd);
 				$dom.closest('.opened_cmd').data('cwd',resultCwd);
 			}
 			
 		}else if(cmd=='cd.'||cmd=='cd..'){
-			resultCwd = this.parsePathForWin32(cwd,[cmd.substr(2)]);
-			if(fs.existsSync(resultCwd)){
+			resultCwd = this.parsePathForWin32(cwd,cmd.substr(2));
+			if(resultCwd){
 				$('.current_menu').find('.current').data('cwd',resultCwd);
 				$dom.closest('.opened_cmd').data('cwd',resultCwd);
 			}
@@ -125,6 +127,10 @@ var Util = {
 		if(cmd==='cd'||cmd==='cd.'||cmd==='cd..'||cmd=='debug'){
 			removeChoke();
 			return;
+		}
+		//去除双引号和单引号，使用nodejs子进程不会有空格目录的情况
+		for(var i=0 ;i<arg.length; i++){
+			arg[i] = arg[i].replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
 		}
 
 		workerProcess = child_process.spawn(cmd,arg||[],(cwd&&{cwd:cwd})||{});
@@ -219,17 +225,27 @@ var Util = {
 	},
 	parsePathForWin32: function(cwd,arg){
 		var resultCwd = '';
+		//去除引号
+		arg = arg.replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
+		arg = arg.replace(/\\/g,'/').replace(/[\/]+$/,'');
 		//处理./和../
-		if(arg[0].slice(0,3) == '..' || arg[0].slice(0,3) == '../'){
+		if(arg.slice(0,3) == '..' || arg.slice(0,3) == '../'){
 			var separator = cwd.lastIndexOf('/');
-			resultCwd = arg[0].replace(/^(\.\.|\.\.\/)/,cwd.substring(0,separator))+'/'+arg[0].substr(arg[0].indexOf('../')!=-1?arg[0].indexOf('../')+3:arg.indexOf('..')+2);
-		}else if(arg[0].slice(0,2) == './'||arg[0].slice(0,1) =='.'){
-			resultCwd = arg[0].replace(/^(\.|\.\/)/,cwd)+'/'+arg[0].substr(arg.indexOf('./')!=-1?arg[0].indexOf('./')+2:arg[0].indexOf('.')+1);
+			resultCwd = separator!=-1 ? arg.replace(/^(\.\.\/|\.\.)/,cwd.substring(0,separator)+'/') : '';
+		}else if(arg.slice(0,2) == './'||arg.slice(0,1) =='.'){
+			resultCwd =  cwd + '/' +arg.replace(/^(\.\/|\.)/,'');
+		}else if(fs.existsSync(cwd + '/' +arg)) {
+			resultCwd = cwd + '/' +arg;
 		}else{
-			resultCwd = cwd + '/' +arg[0];
+			resultCwd = arg;
 		}
-		resultCwd = resultCwd.replace(/[\/]+$/,'');
-		return resultCwd;
+
+		resultCwd = resultCwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
+
+		if(fs.existsSync(resultCwd) && fs.statSync(resultCwd).isDirectory())
+			return resultCwd;
+		else
+			return '';
 	},
 	//创建文件
 	createFile: function (filePath,content,fn){
@@ -399,9 +415,9 @@ var Util = {
 			})
 		}
 		if(!this.cmdKeyMap[key]){
-			throw new Error('命令:'+key+' 不存在');
+			return false;
 		}
-		eval(cmdKeyMap[key]);
+		return this.cmdKeyMap[key].replace(/\\/g,'\\\\');
 	}
 }
 Util.init();

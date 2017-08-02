@@ -18,3 +18,9 @@ td.value{
 td.code,td.code div{
 	word-break:break-all;
 }
+.layui-layer{
+	z-index: 100 !important;
+}
+.layui-layer-shade{
+	z-index: 99 !important;
+}

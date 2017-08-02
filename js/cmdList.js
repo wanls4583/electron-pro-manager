@@ -18,7 +18,7 @@ Util.loadCmdFile(
 )
 
 function initEvt(){
-	setCompleteData(['spawn','createFile','mkdirs']);
+	// setCompleteData(['exec','createFile','mkdirs','getDicValue','importCode']);
 	//添加任务
 	$('body').on('click', '.add', function(){
     	layer.open({
@@ -139,18 +139,18 @@ function initEvt(){
     })
 }
 //设置自定义代码提示
-function setCompleteData(data) {
-    var langTools = ace.require("ace/ext/language_tools");
-    langTools.addCompleter({
-        getCompletions: function(editor, session, pos, prefix, callback) {
-            if (prefix.length === 0) {
-                return callback(null, []);
-            } else {
-                return callback(null, data);
-            }
-        }
-    });
-}
+// function setCompleteData(data) {
+//     var langTools = ace.require("ace/ext/language_tools");
+//     langTools.addCompleter({
+//         getCompletions: function(editor, session, pos, prefix, callback) {
+//             if (prefix.length === 0) {
+//                 return callback(null, []);
+//             } else {
+//                 return callback(null, data);
+//             }
+//         }
+//     });
+// }
 function initData(){
 	var html = $('#cmdItem').html();
 	if(datas[userName]){

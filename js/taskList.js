@@ -140,16 +140,17 @@
 	    	cmdData.cmds.forEach(function(item){
 	    		if(item.key == key){
 	    			var code = parseCode(key)
-	    			// try{
+	    			try{
 	    				eval(code);
 	    				layer.close(layer.open())
-	    			// }catch(e){
-	    			// 	layer.open({
-				    // 		title: '错误',
-				    // 		content: e.message,
-				    // 		btn:['确定']
-				    // 	});
-	    			// }
+	    			}catch(e){
+	    				layer.open({
+				    		title: '错误',
+				    		area:['500px'],
+				    		content: e.stack,
+				    		btn:['确定']
+				    	});
+	    			}
 	    			
 	    		}
 	    	})
