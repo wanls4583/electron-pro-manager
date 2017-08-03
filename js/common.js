@@ -36,10 +36,10 @@ var Util = {
 	init:function(){
 		var self = this;
 		window.exec = function(cmdKey){
-			var code = self.importCode(cmdKey);
-			if(code && arguments.length==1){
-				eval(code);
-			}else
+			// var code = self.importCode(cmdKey);
+			// if(code && arguments.length==1){
+			// 	eval(code);
+			// }else
 				self.spawn.apply(self,arguments);
 		}
 		window.createFile = function(){
@@ -50,6 +50,9 @@ var Util = {
 		}
 		window.getValue = function(){
 			return self.getValue.apply(self,arguments);
+		}
+		window.msgTip = function(){
+			self.msgTip.apply(self,arguments);
 		}
 	},
 	replaceReturn : function(str){
@@ -138,7 +141,7 @@ var Util = {
 		parent.mainPlatform.process[$('.current_win',parent.document).attr('title')] = workerProcess;
 
 		workerProcess.on('error',function(){
-			// self.exec(cmd+' '+(arg&&arg.join(' ')),$dom);
+
 			var msg = '命令'+cmd+'执行失败';
 			if($dom){
 				msg = msg+'<br/>';
@@ -259,26 +262,48 @@ var Util = {
 	//创建文件
 	createFile: function (filePath,content,fn){
 		var This = this;
-		fs.exists(filePath, function(exists) { 
-			if(!exists){
-				This.mkdirs(path.dirname(filePath),function(){
-					This.writeFile(filePath, function(err) {
+		var exists = fs.existsSync(path.dirname(filePath));
+
+		if(!exists){
+			This.mkdirs(path.dirname(filePath),function(){
+				writeContnet(content);
+			});
+		}else{
+			writeContnet(content);
+		}
+
+		function writeContnet(content){
+			if(fs.existsSync(content) && fs.statSync(content).isFile()){
+				This.loadFile(content,function(err,data){
+					if(err){
+						This.msgTip('创建失败',err)
+						return;
+					}
+					This.writeFile(filePath,data, function(err) {
 					    if(err) {
-					     	layer.open({
-					    		title: '创建失败',
-					    		content: ''+err,
-					    		btn:['确定']
-					    	});
+					     	This.msgTip('创建失败',err)
 					        return;
 					    }
 					    if(typeof fn === 'function'){
+					    	console.log('new file:'+filePath);
 					    	fn();
 					    }
 					});	
-				});
+				})
+			}else{
+				This.writeFile(filePath,content, function(err) {
+				    if(err) {
+				     	This.msgTip('创建失败',err)
+				        return;
+				    }
+				    if(typeof fn === 'function'){
+				    	console.log('new file:'+filePath);
+				    	fn();
+				    }
+				});	
 			}
-		})
-		
+			
+		}
 	},
 	//创建目录
 	mkdirs :function (dirname,callback) {
@@ -391,6 +416,13 @@ var Util = {
 			item.contentWindow.location.reload(true);
 		})
 	},
+	msgTip:function(title,err){
+		layer.open({
+    		title: title,
+    		content: ''+err,
+    		btn:['确定']
+    	});
+	},
 	getValue: function(key){
 		if(!this.dicKeyMap){
 			this.dicKeyMap = {};
@@ -406,7 +438,7 @@ var Util = {
 			}
 		}
 		var value = '';
-		var matche = key.match(/task\.([\s\S])+?/);
+		var matche = key.match(/task\.([\s\S]+)/);
 		if(matche){
 			value = this.currentTask[matche[1]];
 		}else if(this.dicKeyMap[key]){
@@ -416,17 +448,17 @@ var Util = {
 		}
 		return value;
 	},
-	importCode: function(key){
-		if(!this.cmdKeyMap){
-			this.cmdKeyMap = {};
-			parent.mainPlatform.cmdData.cmds.forEach(function(item){
-				this.cmdKeyMap[item.key] = item.code;
-			})
-		}
-		if(!this.cmdKeyMap[key]){
-			return false;
-		}
-		return this.cmdKeyMap[key].replace(/\\/g,'\\\\');
-	}
+	// importCode: function(key){
+	// 	if(!this.cmdKeyMap){
+	// 		this.cmdKeyMap = {};
+	// 		parent.mainPlatform.cmdData.cmds.forEach(function(item){
+	// 			this.cmdKeyMap[item.key] = item.code;
+	// 		})
+	// 	}
+	// 	if(!this.cmdKeyMap[key]){
+	// 		return false;
+	// 	}
+	// 	return this.cmdKeyMap[key].replace(/\\/g,'\\\\');
+	// }
 }
 Util.init();

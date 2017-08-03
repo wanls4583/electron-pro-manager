@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","tasks":[{"title":"禁播房页面","dir":"ban","wiki":""}]}}
+{"Admin":{"userName":"Admin","tasks":[{"title":"禁播房页面","dir":"ban|v1|1.0.1","wiki":""}]}}

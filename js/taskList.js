@@ -191,14 +191,25 @@
                         Util.dicKeyMap[key1] = Util.dicKeyMap[key1].replace('{'+key2+'}',Util.dicKeyMap[key2]);
                     }
                 }
-            }
+            };
 			cmdData.cmds.forEach(function(item){
 				Util.cmdKeyMap[item.key] = item.code;
-			})
+			});
+			for(key1 in Util.cmdKeyMap){
+                for(key2 in Util.cmdKeyMap){
+                    if(Util.cmdKeyMap[key1].match(returnReg(key2)) && !Util.cmdKeyMap[key2].match(returnReg(key1))){
+                    	console.log(key1,key2,Util.cmdKeyMap[key1].match(returnReg(key2)),Util.cmdKeyMap[key2].match(returnReg(key1)))
+                        Util.cmdKeyMap[key1] = Util.cmdKeyMap[key1].replace(returnReg(key2),Util.cmdKeyMap[key2]);
+                    }
+                }
+            }
+            function returnReg(key){
+            	return RegExp('exec\\s*?\\(\\s*?[\'\"]'+key+'[\'\"]\\s*?\\)','mg');;
+            }
 		}
 		var cmd = Util.cmdKeyMap[cmdkey];
 
-		return cmd.replace(/\\/g,'\\\\')
+		return cmd.replace(/[^\\]\\[^\\]/,'\\\\');
 		
 	}
 	function initData(){
