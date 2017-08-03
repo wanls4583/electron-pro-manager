@@ -49,7 +49,7 @@ var Util = {
 			self.mkdirs.apply(self,arguments);
 		}
 		window.getValue = function(){
-			return self.getDicValue.apply(self,arguments);
+			return self.getValue.apply(self,arguments);
 		}
 	},
 	replaceReturn : function(str){

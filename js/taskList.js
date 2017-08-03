@@ -184,7 +184,14 @@
 			Util.cmdKeyMap = {};
 			dicData.dics.forEach(function(item){
 				Util.dicKeyMap[item.key] = item.value;
-			})
+			});
+			for(key1 in Util.dicKeyMap){
+                for(key2 in Util.dicKeyMap){
+                    if(Util.dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && Util.dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+                        Util.dicKeyMap[key1] = Util.dicKeyMap[key1].replace('{'+key2+'}',Util.dicKeyMap[key2]);
+                    }
+                }
+            }
 			cmdData.cmds.forEach(function(item){
 				Util.cmdKeyMap[item.key] = item.code;
 			})

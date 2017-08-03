@@ -183,8 +183,8 @@ var mainPlatform = {
                 })
                 for(key1 in dicKeyMap){
                     for(key2 in dicKeyMap){
-                        if(dicKeyMap[key1].indexOf('<%'+key2+'%>')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-                            dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2].value);
+                        if(dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
+                            dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2]);
                         }
                     }
                 }
