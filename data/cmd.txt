@@ -1,1 +1,1 @@
-{"Admin":{"userName":"Admin","cmds":[{"title":"监听scss","key":"watch_scss","code":"exec('gulp.cmd',['watch','--live/ban/v1'],getDicValue('build_pc'),true);\n"},{"title":"启动nginx","key":"start_nginx","code":"exec('nginx',null,'D:\\openresty',true);\n"},{"title":"test","key":"test","code":"exec('start_nginx');"}]}}
+{"Admin":{"userName":"Admin","cmds":[{"title":"监听scss","key":"watch_scss","code":"exec('gulp.cmd',['watch','--live/ban/v1'],getValue('build_pc'),true);\n"},{"title":"启动nginx","key":"start_nginx","code":"exec('nginx',null,'D:\\openresty',true);\n"}]}}

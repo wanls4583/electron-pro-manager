@@ -48,7 +48,7 @@ var Util = {
 		window.mkdirs = function(){
 			self.mkdirs.apply(self,arguments);
 		}
-		window.getDicValue = function(){
+		window.getValue = function(){
 			return self.getDicValue.apply(self,arguments);
 		}
 	},
@@ -129,7 +129,7 @@ var Util = {
 			return;
 		}
 		//去除双引号和单引号，使用nodejs子进程不会有空格目录的情况
-		for(var i=0 ;i<arg.length; i++){
+		for(var i=0 ;arg && i<arg.length; i++){
 			arg[i] = arg[i].replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
 		}
 
@@ -227,13 +227,22 @@ var Util = {
 		var resultCwd = '';
 		//去除引号
 		arg = arg.replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
+		//反斜杠换成斜杠，去除最后一个斜杠
 		arg = arg.replace(/\\/g,'/').replace(/[\/]+$/,'');
+
 		//处理./和../
-		if(arg.slice(0,3) == '..' || arg.slice(0,3) == '../'){
-			var separator = cwd.lastIndexOf('/');
-			resultCwd = separator!=-1 ? arg.replace(/^(\.\.\/|\.\.)/,cwd.substring(0,separator)+'/') : '';
-		}else if(arg.slice(0,2) == './'||arg.slice(0,1) =='.'){
-			resultCwd =  cwd + '/' +arg.replace(/^(\.\/|\.)/,'');
+		if(arg.slice(0,2) == '..' || arg.slice(0,3) == '../'){
+			while(arg.slice(0,2) == '..' || arg.slice(0,3) == '../'){
+				var separator = cwd.lastIndexOf('/');
+				arg = arg.replace(/^(\.\.\/|\.\.)/,'');
+				cwd = cwd.substring(0,separator);
+			}
+			resultCwd = cwd ? cwd+'/'+arg : '';
+		}else if(arg.slice(0,1) == '.' || arg.slice(0,2) == './'){
+			while(arg.slice(0,1) == '.' || arg.slice(0,2) == './'){
+				arg = arg.replace(/^(\.\/|\.)/,'');
+			}
+			resultCwd = cwd + '/' +arg;
 		}else if(fs.existsSync(cwd + '/' +arg)) {
 			resultCwd = cwd + '/' +arg;
 		}else{
@@ -382,7 +391,7 @@ var Util = {
 			item.contentWindow.location.reload(true);
 		})
 	},
-	getDicValue: function(key){
+	getValue: function(key){
 		if(!this.dicKeyMap){
 			this.dicKeyMap = {};
 			parent.mainPlatform.dicData.dics.forEach(function(item){
@@ -397,7 +406,7 @@ var Util = {
 			}
 		}
 		var value = '';
-		var matche = key.match(/current\.([\s\S])+?/);
+		var matche = key.match(/task\.([\s\S])+?/);
 		if(matche){
 			value = this.currentTask[matche[1]];
 		}else if(this.dicKeyMap[key]){
