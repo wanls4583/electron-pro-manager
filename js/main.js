@@ -1,18 +1,66 @@
 var remote = require('electron').remote;
 var Menu = remote.Menu;
 var MenuItem = remote.MenuItem;
+var globalDatas = remote.getGlobal('datas');
 var mainPlatform = {
     menus: [],
-    openedWin: {},
-    cmdData:null,
-    dicData:null,
-    taskData:null,
-    config:null,
     process:{},
 	init: function(){
-        this.bindEvent();
-        this.render(menu['home']);
+
+        var self = this;
+        var userName = $('.pf-user-name').text();
+        globalDatas['userName'] = userName;
+        globalDatas['openedWin'] = {};
+        this.loadDicFile(function(err,data){
+            data && data.length>4 && (globalDatas.dicDatas = JSON.parse(data)) && (globalDatas.dicData = globalDatas.dicDatas[userName]);
+            self.parseDic();
+            loadDone();
+        });
+        this.loadTaskFile(function(err,data){
+            data && data.length>4 && (globalDatas.taskDatas = JSON.parse(data)) && (globalDatas.taskData = globalDatas.taskDatas[userName]);
+            loadDone();
+        });
+        this.loadCmdFile(function(err,data){
+            data && data.length>4 && (globalDatas.cmdDatas = JSON.parse(data)) && (globalDatas.cmdData = globalDatas.cmdDatas[userName]);
+            self.parseCmd();
+            loadDone();
+        });
+        function loadDone(){
+            if(globalDatas.dicDatas && globalDatas.taskDatas && globalDatas.cmdDatas){
+                self.bindEvent();
+                self.render(menu['home']);
+            }
+        }
+
 	},
+    loadTaskFile : function(callback1,callback2){
+        Util.loadFile(globalDatas.taskFilePath,callback1,callback2);
+    },
+    loadConfigFile: function(callback1,callback2){
+        Util.loadFile(globalDatas.configFilePath,callback1,callback2);
+    },
+    loadDicFile: function(callback1,callback2){
+        Util.loadFile(globalDatas.dicFilePath,callback1,callback2);
+    },
+    loadCmdFile: function(callback1,callback2){
+        Util.loadFile(globalDatas.cmdFilePath,callback1,callback2);
+    },
+    parseDic: function(){
+
+        globalDatas.dicKeyMap = {};
+        globalDatas.dicData.dics.forEach(function(item){
+            globalDatas.dicKeyMap[item.key] = item.value;
+        })
+
+    },
+    parseCmd: function(){
+
+        globalDatas.cmdKeyMap = {};
+        globalDatas.cmdData.cmds.forEach(function(item){
+            globalDatas.cmdKeyMap[item.key] = item.code;
+        })
+
+    },
 	bindEvent: function(){
         var menuName = $('.pf-nav').find('.current').data('menu');
 		var self = this;
@@ -38,15 +86,15 @@ var mainPlatform = {
             $(this).addClass('current');
             $('.current_win').removeClass('current_win');
             if(src.indexOf('open_cmd')!=-1){
-            	if(src!='open_cmd_' && self.openedWin[src]){
-            		self.openedWin[src].addClass('current_win');
+            	if(src!='open_cmd_' && globalDatas.openedWin[src]){
+            		globalDatas.openedWin[src].addClass('current_win');
             	}else{
             		var html = '<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_win"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd').replace(/\\/g,'/')+'> </span><input type="text"></wrap></div>'
             		var openedCmd = null;
                     $('#pf-page').append(html);
                     openedCmd = $('.current_win');
             		$(this).data('src','open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount);
-            		self.openedWin['open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount] = openedCmd;
+            		globalDatas.openedWin['open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount] = openedCmd;
             		openedCmd.find('input').focus();
                     openedCmd.find('input').css('padding-left',openedCmd.find('.wrap').find('span').width()+5+'px')
             		if(!$(this).attr('title')){
@@ -58,14 +106,14 @@ var mainPlatform = {
             	}
             }else{
             	if(src.indexOf('open_iframe')!=-1){
-            		self.openedWin[src]&&self.openedWin[src].addClass('current_win');
+            		globalDatas.openedWin[src]&&globalDatas.openedWin[src].addClass('current_win');
             	}else{
                     var dicClass = $(this).data('dicclass') || '';
                     var cmdClass = $(this).data('cmdclass') || '';
             		var html = '<iframe class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>'
             		$('#pf-page').append(html);
             		$(this).data('src','open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount);
-            		self.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
+            		globalDatas.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
                     self.menus[menuName].iframeCount++;
             	}
             }
@@ -75,12 +123,12 @@ var mainPlatform = {
             var menu = new Menu();
             menu.append(new MenuItem({ label: '移除命令窗口', click: function(e){
                 var src = $(This).data('src');
-                if(src.indexOf('open_cmd')!=-1 && self.openedWin[src]){
+                if(src.indexOf('open_cmd')!=-1 && globalDatas.openedWin[src]){
                     if($(This).hasClass('current')){
                         $('.sider-nav li').first().trigger('click');
                     }
                     $(This).remove();
-                    self.openedWin[src].remove();
+                    globalDatas.openedWin[src].remove();
                 }
             }}));
             menu.popup(remote.getCurrentWindow());
@@ -140,56 +188,16 @@ var mainPlatform = {
         	}
         });
         $(document).on('click','.add_cmd',function(){
-            if(!this.dicData){
-                var userName = $('.pf-user-name',window.parent.document).text();
-                Util.loadDicFile(function(err,data){
-                    data && data.length>4 && (self.dicData = JSON.parse(data)[userName]);
-                    add();
-                })
-            }else{
-                add();
-            }
-            
-            function add(){
-                parseDic();
-                var menu = {
-                    cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:process.cwd(),
-                    title: '',
-                    icon: 'imgs/main/l03.png',
-                    href: 'open_cmd',
-                    isCurrent: true
-                }
-                self.addMenu(menu);
-            }
-        });
 
-        /*$(document).on('click', '.pf-logout', function() {
-            layer.confirm('您确定要退出吗？', {
-              icon: 4,
-			  title: '确定退出' //按钮
-			}, function(){
-			  location.href= 'login.html'; 
-			});
-        });
-
-        $(document).on('click', '.pf-modify-pwd', function() {
-            
-        });*/
-        function parseDic(){
-            if(!dicKeyMap){
-                dicKeyMap = {};
-                self.dicData.dics.forEach(function(item){
-                    dicKeyMap[item.key] = item.value;
-                })
-                for(key1 in dicKeyMap){
-                    for(key2 in dicKeyMap){
-                        if(dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-                            dicKeyMap[key1] = dicKeyMap[key1].replace('{'+key2+'}',dicKeyMap[key2]);
-                        }
-                    }
-                }
+            var menu = {
+                cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:process.cwd(),
+                title: '',
+                icon: 'imgs/main/l03.png',
+                href: 'open_cmd',
+                isCurrent: true
             }
-        }
+            self.addMenu(menu);
+        });
 	},
 
 	render: function(menu){

@@ -14,7 +14,7 @@ Array.prototype.remove = function(val) {
 		this.splice(index, 1);
 	}
 };
-var globalDatas = {};
+
 var require = require||window.parent.require;
 var child_process = require('child_process');
 var iconv = require('iconv-lite');
@@ -24,14 +24,9 @@ var dialog = remote.dialog;
 var path = require("path"); 
 var shell = require('electron').shell; 
 var fs = require('fs');
-globalDatas.configFilePath = "data/config.txt";
-globalDatas.taskFilePath = "data/task.txt";
-globalDatas.dicFilePath = "data/dic.txt";
-globalDatas.cmdFilePath = 'data/cmd.txt';
+var globalDatas = remote.getGlobal('datas');
+
 var Util = {
-	dicKeyMap: null,
-	cmdKeyMap: null,
-	currentTask: null,
 	//初始化对外接口
 	init:function(){
 		var self = this;
@@ -374,18 +369,6 @@ var Util = {
 			} 
 		}); 
 	},
-	loadTaskFile : function(callback1,callback2){
-		this.loadFile(globalDatas.taskFilePath,callback1,callback2);
-	},
-	loadConfigFile: function(callback1,callback2){
-		this.loadFile(globalDatas.configFilePath,callback1,callback2);
-	},
-	loadDicFile: function(callback1,callback2){
-		this.loadFile(globalDatas.dicFilePath,callback1,callback2);
-	},
-	loadCmdFile: function(callback1,callback2){
-		this.loadFile(globalDatas.cmdFilePath,callback1,callback2);
-	},
 	readFile: function(path,callback){
 		fs.readFile(path,function(err,data){
 			typeof callback ==='function' && callback(err,data);
@@ -424,25 +407,17 @@ var Util = {
     	});
 	},
 	getValue: function(key){
-		if(!this.dicKeyMap){
-			this.dicKeyMap = {};
-			parent.mainPlatform.dicData.dics.forEach(function(item){
-				this.dicKeyMap[item.key] = item.value;
-			})
-			for(key1 in this.dicKeyMap){
-				for(key2 in this.dicKeyMap){
-					if(this.dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && this.dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-						this.dicKeyMap[key1] = this.dicKeyMap[key1].replace('{'+key2+'}',this.dicKeyMap[key2]);
-					}
-				}
+		for(key1 in globalDatas.dicKeyMap){
+			if(globalDatas.dicKeyMap[key].indexOf('{'+key1+'}')!=-1 && globalDatas.dicKeyMap[key1].indexOf('{'+key+'}')==-1){
+				globalDatas.dicKeyMap[key] = globalDatas.dicKeyMap[key].replace('{'+key1+'}',globalDatas.dicKeyMap[key1]);
 			}
 		}
 		var value = '';
 		var matche = key.match(/task\.([\s\S]+)/);
 		if(matche){
-			value = this.currentTask[matche[1]];
-		}else if(this.dicKeyMap[key]){
-			value = this.dicKeyMap[key];
+			value = globalDatas.currentTask[matche[1]];
+		}else if(globalDatas.dicKeyMap[key]){
+			value = globalDatas.dicKeyMap[key];
 		}else{
 			throw new Error('字典:'+key+' 不存在');
 		}

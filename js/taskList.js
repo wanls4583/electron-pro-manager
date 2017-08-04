@@ -1,23 +1,15 @@
 	var require = require || window.parent.require;
 	var fs = require('fs');
 	var shell = require('electron').shell;
-	var userName = $('.pf-user-name',window.parent.document).text();
-	var datas = {};
-	var taskData = parent.mainPlatform.taskData;
-    var cmdData = parent.mainPlatform.cmdData;
-    var dicData = parent.mainPlatform.dicData;
+	var remote = require('electron').remote;
+	var globalDatas = remote.getGlobal('datas');
+	var userName = globalDatas.userName;
+	var taskData = globalDatas.taskData;
+	var datas = globalDatas.taskDatas;
+	var cmdData = globalDatas.cmdData;
 
-    Util.loadTaskFile(
-		function(err,data){
-			data && data.length>4 && (datas = JSON.parse(data));
-			console.log('datas',datas);
-			initData();
-			initEvt();
-		},function(){
-			initData();
-	    	initEvt();
-		}
-	)
+	initData();
+	initEvt();
 	function initEvt(){
 		//添加任务
 		$('body').on('click', '.add', function(){
@@ -99,39 +91,22 @@
 	    $('body').on('click', '.open_cmd', function(){
 	    	var tpl = $('#cmdTpl');
 	    	var This = this;
-	    	if(!cmdData){
-	    		Util.loadCmdFile(function(err,data){
-	    			data && data.length>4 && (cmdData = parent.mainPlatform.cmdData = JSON.parse(data)[userName]);
-	    			dicData && createCmdPanel();
-	    		})
-	    	}
-	    	if(!dicData){
-	    		Util.loadDicFile(function(err,data){
-	    			data && data.length>4 && (dicData = parent.mainPlatform.dicData = JSON.parse(data)[userName]);
-	    			cmdData && createCmdPanel();
-	    		})
-	    	}
-	    	if(cmdData && dicData){
-	    		createCmdPanel();
-	    	}
+    		var cmdItemHtml = '<div class="button">i class="iconfont">&#xe628;</i><span class="button-label"></span></div>';
+    		var cmdItem = null;
+    		var html = '';
+    		for(var i=0; i<cmdData.cmds.length; i++){
+    			cmdItem = cmdData.cmds[i];
+    			html += '<div data-key="'+cmdItem.key+'" class="cmd button"><i class="iconfont">&#xe628;</i><span class="button-label">'+cmdItem.title+'</span></div>'
+    		}
+    		layer.open({
+	    		title: '命令',
+	    		area:['500px'],
+	    		content: html,
+	    		btn:['取消']
+	    	});	
+	    	var index =  $(This).closest('tr').find('.num').data('index');
+	    	globalDatas.currentTask = taskData.tasks[index];
 
-	    	function createCmdPanel(){
-	    		var cmdItemHtml = '<div class="button">i class="iconfont">&#xe628;</i><span class="button-label"></span></div>';
-	    		var cmdItem = null;
-	    		var html = '';
-	    		for(var i=0; i<cmdData.cmds.length; i++){
-	    			cmdItem = cmdData.cmds[i];
-	    			html += '<div data-key="'+cmdItem.key+'" class="cmd button"><i class="iconfont">&#xe628;</i><span class="button-label">'+cmdItem.title+'</span></div>'
-	    		}
-	    		layer.open({
-		    		title: '命令',
-		    		area:['500px'],
-		    		content: html,
-		    		btn:['取消']
-		    	});	
-		    	var index =  $(This).closest('tr').find('.num').data('index');
-		    	Util.currentTask = taskData.tasks[index];
-	    	}
 	    })
 	    //命令
 	    $('body').on('click', '.cmd', function(){
@@ -179,54 +154,31 @@
 	}
 	//解析命令
 	function parseCode(cmdkey){
-		if(!Util.dicKeyMap||!Util.cmdKeyMap){
-			Util.dicKeyMap = {};
-			Util.cmdKeyMap = {};
-			dicData.dics.forEach(function(item){
-				Util.dicKeyMap[item.key] = item.value;
-			});
-			for(key1 in Util.dicKeyMap){
-                for(key2 in Util.dicKeyMap){
-                    if(Util.dicKeyMap[key1].indexOf('{'+key2+'}')!=-1 && Util.dicKeyMap[key2].indexOf('{'+key1+'}')==-1){
-                        Util.dicKeyMap[key1] = Util.dicKeyMap[key1].replace('{'+key2+'}',Util.dicKeyMap[key2]);
-                    }
-                }
-            };
-			cmdData.cmds.forEach(function(item){
-				Util.cmdKeyMap[item.key] = item.code;
-			});
-			for(key1 in Util.cmdKeyMap){
-                for(key2 in Util.cmdKeyMap){
-                    if(Util.cmdKeyMap[key1].match(returnReg(key2)) && !Util.cmdKeyMap[key2].match(returnReg(key1))){
-                    	console.log(key1,key2,Util.cmdKeyMap[key1].match(returnReg(key2)),Util.cmdKeyMap[key2].match(returnReg(key1)))
-                        Util.cmdKeyMap[key1] = Util.cmdKeyMap[key1].replace(returnReg(key2),Util.cmdKeyMap[key2]);
-                    }
-                }
+		for(key1 in globalDatas.cmdKeyMap){
+            if(globalDatas.cmdKeyMap[cmdkey].match(returnReg(key1)) && !globalDatas.cmdKeyMap[key1].match(returnReg(cmdkey))){
+                globalDatas.cmdKeyMap[cmdkey] = globalDatas.cmdKeyMap[cmdkey].replace(returnReg(key1),globalDatas.cmdKeyMap[key1]);
             }
-            function returnReg(key){
-            	return RegExp('exec\\s*?\\(\\s*?[\'\"]'+key+'[\'\"]\\s*?\\)','mg');;
-            }
-		}
-		var cmd = Util.cmdKeyMap[cmdkey];
+        }
+        function returnReg(key){
+        	return RegExp('exec\\s*?\\(\\s*?[\'\"]'+key+'[\'\"]\\s*?\\)','mg');;
+        }
+		var cmd = globalDatas.cmdKeyMap[cmdkey];
 
-		return cmd.replace(/[^\\]\\[^\\]/,'\\\\');
+		return cmd.replace(/([^\\])\\([^\\])/g,'$1\\\\$2');
 		
 	}
 	function initData(){
 		var html = $('#taskItem').html();
-		if(datas[userName]){
-			var tasks = datas[userName].tasks;
-			taskData = parent.mainPlatform.taskData = datas[userName];
-			$('#taskList').html('');
-			for(var j = 0; j < tasks.length; j++){
-				var item = '';
-				item = html.replace('<td class="num"></td>','<td data-index="'+j+'" class="num">'+(j+1)+'</td>');
-				item = item.replace('<td class="title"></td>','<td data-title="'+tasks[j].title+'" class="title">'+tasks[j].title+'</td>');
-				item = item.replace('<td class="dir"></td>','<td data-dir="'+tasks[j].dir+'" class="dir">'+tasks[j].dir+'</td>');
-				item = item.replace('<td class="wiki"></td>','<td data-wiki="'+tasks[j].wiki+'" class="wiki"><a href="javascript:void(0)">'+tasks[j].wiki+'</a></td>');
-				$('#taskList').append(item);
-			} 
-		}
+		var tasks = taskData.tasks;
+		$('#taskList').html('');
+		for(var j = 0; j < tasks.length; j++){
+			var item = '';
+			item = html.replace('<td class="num"></td>','<td data-index="'+j+'" class="num">'+(j+1)+'</td>');
+			item = item.replace('<td class="title"></td>','<td data-title="'+tasks[j].title+'" class="title">'+tasks[j].title+'</td>');
+			item = item.replace('<td class="dir"></td>','<td data-dir="'+tasks[j].dir+'" class="dir">'+tasks[j].dir+'</td>');
+			item = item.replace('<td class="wiki"></td>','<td data-wiki="'+tasks[j].wiki+'" class="wiki"><a href="javascript:void(0)">'+tasks[j].wiki+'</a></td>');
+			$('#taskList').append(item);
+		} 
 		checkBoxReset();
 	}
 
