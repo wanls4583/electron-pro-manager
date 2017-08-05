@@ -147,7 +147,7 @@ var mainPlatform = {
         	var cwd = $openedCmd.data('cwd');
             var cmd = '';
             if((ev.keyCode == 'C'.charCodeAt(0)||ev.keyCode == 'c'.charCodeAt(0)) && ev.ctrlKey){
-                Util.spawn('exit',null,null,$openedCmd.find('.out'));
+                self.spawn('exit',null,null,$openedCmd.find('.out'));
             }
         	if($openedCmd.find('.wrap').hasClass('choke')){
                 return false;
@@ -155,7 +155,7 @@ var mainPlatform = {
 		    if(ev.keyCode==13) {
 		        args = parseCmd($(this).val());
                 cmd = args.splice(0,1)[0];
-		        Util.spawn(cmd,args,cwd,$openedCmd.find('.out'));
+		        self.spawn(cmd,args,cwd,$openedCmd.find('.out'));
                 cmdHistory.push($(this).val());
                 cmdHistoryIndex = cmdHistory.length;
 		        $(this).val('');
