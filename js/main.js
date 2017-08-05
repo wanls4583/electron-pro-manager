@@ -1,41 +1,40 @@
 var remote = require('electron').remote;
 var Menu = remote.Menu;
 var MenuItem = remote.MenuItem;
-var globalDatas = remote.getGlobal('datas');
+var globalDatas = remote.getGlobal('initDatas');
 var ipcRenderer = require('electron').ipcRenderer;
 var child_process = require('child_process');
 
 var mainPlatform = {
     menus: [],
+    openedWin: {},
+    process: {},
 	init: function(){
-
         var self = this;
         var userName = $('.pf-user-name').text();
-        globalDatas['userName'] = userName;
-        globalDatas['openedWin'] = {};
-        globalDatas['process'] = {};
+        ipcRenderer.sendSync('init',userName);
         this.loadDicFile(function(err,data){
-            data && data.length>4 && (globalDatas.dicDatas = JSON.parse(data)) && (globalDatas.dicData = globalDatas.dicDatas[userName]);
+            data && data.length>4 && (globalDatas = ipcRenderer.sendSync('setDicDatas',JSON.parse(data)));
             Util.parseDic();
             loadDone();
         });
         this.loadTaskFile(function(err,data){
-            data && data.length>4 && (globalDatas.taskDatas = JSON.parse(data)) && (globalDatas.taskData = globalDatas.taskDatas[userName]);
+            data && data.length>4 && (globalDatas = ipcRenderer.sendSync('setTaskDatas',JSON.parse(data)));
             loadDone();
         });
         this.loadCmdFile(function(err,data){
-            data && data.length>4 && (globalDatas.cmdDatas = JSON.parse(data)) && (globalDatas.cmdData = globalDatas.cmdDatas[userName]);
+            data && data.length>4 && (globalDatas = ipcRenderer.sendSync('setCmdDatas',JSON.parse(data)));
             Util.parseCmd();
             loadDone();
         });
         function loadDone(){
+
             if(globalDatas.dicDatas && globalDatas.taskDatas && globalDatas.cmdDatas){
                 self.bindEvent();
                 self.render(menu['home']);
                 self.initIpc();
             }
         }
-
 	},
     initIpc: function(){
         var self = this;
@@ -88,17 +87,18 @@ var mainPlatform = {
             menuName = $('.pf-nav').find('.current').data('menu');
             $('.current_menu').find('.sider-nav li').removeClass('current');
             $(this).addClass('current');
+            $('.current_win').hide();
             $('.current_win').removeClass('current_win');
             if(src.indexOf('open_cmd')!=-1){
-            	if(src!='open_cmd_' && globalDatas.openedWin[src]){
-            		globalDatas.openedWin[src].addClass('current_win');
+            	if(src!='open_cmd_' && self.openedWin[src]){
+            		self.openedWin[src].addClass('current_win');
             	}else{
             		var html = '<div data-cwd="'+$(this).data('cwd')+'" class="opened_cmd current_win"><div class="out"></div><div class="wrap"><span>'+$(this).data('cwd').replace(/\\/g,'/')+'> </span><input type="text"></wrap></div>'
             		var openedCmd = null;
                     $('#pf-page').append(html);
                     openedCmd = $('.current_win');
             		$(this).data('src','open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount);
-            		globalDatas.openedWin['open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount] = openedCmd;
+            		self.openedWin['open_cmd_'+menuName+'_'+self.menus[menuName].cmdCount] = openedCmd;
             		openedCmd.find('input').focus();
                     openedCmd.find('input').css('padding-left',openedCmd.find('.wrap').find('span').width()+5+'px')
             		if(!$(this).attr('title')){
@@ -110,29 +110,30 @@ var mainPlatform = {
             	}
             }else{
             	if(src.indexOf('open_iframe')!=-1){
-            		globalDatas.openedWin[src]&&globalDatas.openedWin[src].addClass('current_win');
+            		self.openedWin[src]&&self.openedWin[src].addClass('current_win');
             	}else{
                     var dicClass = $(this).data('dicclass') || '';
                     var cmdClass = $(this).data('cmdclass') || '';
-            		var html = '<iframe  class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto" nodeintegration></iframe>'
+            		var html = '<webview  class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" style="width:100%;height:100%" nodeintegration></webview>'
             		$('#pf-page').append(html);
             		$(this).data('src','open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount);
-            		globalDatas.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
+            		self.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
                     self.menus[menuName].iframeCount++;
             	}
             }
+            $('.current_win').show();
         });
         $(document).on('contextmenu', '.sider-nav li', function(){
             var This = this;
             var menu = new Menu();
             menu.append(new MenuItem({ label: '移除命令窗口', click: function(e){
                 var src = $(This).data('src');
-                if(src.indexOf('open_cmd')!=-1 && globalDatas.openedWin[src]){
+                if(src.indexOf('open_cmd')!=-1 && self.openedWin[src]){
                     if($(This).hasClass('current')){
                         $('.sider-nav li').first().trigger('click');
                     }
                     $(This).remove();
-                    globalDatas.openedWin[src].remove();
+                    self.openedWin[src].remove();
                 }
             }}));
             menu.popup(remote.getCurrentWindow());
@@ -283,7 +284,7 @@ var mainPlatform = {
             remote.getCurrentWindow().toggleDevTools();
         }else if(cmd=='exit'){
             var title = $('.current_win',parent.document).attr('title');
-            this.exec('taskkill /F /T /pid '+globalDatas.process[title]);
+            this.exec('taskkill /F /T /pid '+self.process[title]);
             return;
         }
 
@@ -314,7 +315,7 @@ var mainPlatform = {
 
         workerProcess = child_process.spawn(cmd,arg||[],(cwd&&{cwd:cwd})||{});
 
-        globalDatas.process[$('.current_win').attr('title')] = workerProcess.pid;
+        self.process[$('.current_win').attr('title')] = workerProcess.pid;
 
         workerProcess.on('error',function(err){
 
@@ -403,5 +404,4 @@ var mainPlatform = {
         return workerProcess;
     },
 };
-
 mainPlatform.init();

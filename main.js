@@ -53,15 +53,53 @@ app.on('activate', function () {
 })
 
 //全局数据
-global.datas  ={}
+global.initDatas = global.datas  ={}
 global.datas.configFilePath = "data/config.txt";
 global.datas.taskFilePath = "data/task.txt";
 global.datas.dicFilePath = "data/dic.txt";
 global.datas.cmdFilePath = 'data/cmd.txt';
 
+ipcMain.on('init',function(event, arg){
+  global.datas.userName = arg;
+  event.returnValue = true;
+});
+
+ipcMain.on('setDicDatas',function(event, arg){
+  global.datas.dicDatas = arg;
+  global.datas.dicData = global.datas.dicDatas[global.datas.userName];
+  event.returnValue = global.datas;
+});
+
+ipcMain.on('setCmdDatas',function(event, arg){
+  global.datas.cmdDatas = arg;
+  global.datas.cmdData = global.datas.cmdDatas[global.datas.userName];
+  event.returnValue = global.datas;
+});
+
+ipcMain.on('setTaskDatas',function(event, arg){
+  global.datas.taskDatas = arg;
+  global.datas.taskData = global.datas.taskDatas[global.datas.userName];
+  event.returnValue = global.datas;
+});
+
+ipcMain.on('parseDic',function(event, arg){
+  global.datas.dicKeyMap = {};
+  global.datas.dicData.dics.forEach(function(item){
+      global.datas.dicKeyMap[item.key] = item.value;
+  })
+  event.returnValue = true;
+});
+
+ipcMain.on('parseCmd',function(event, arg){
+  global.datas.cmdKeyMap = {};
+  global.datas.cmdData.cmds.forEach(function(item){
+      global.datas.cmdKeyMap[item.key] = item.code;
+  })
+  event.returnValue = true;
+});
+
 ipcMain.on('spawn', function(event, arg) {
   mainWindow.webContents.send('do-spawn', arg);
-  // event.sender.send('do-spawn', arg);
 });
 
 ipcMain.on('refresh-need-cmd-win', function(event, arg) {

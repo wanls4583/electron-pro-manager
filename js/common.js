@@ -231,23 +231,16 @@ var Util = {
 	refreshNeedDicWin: function(){
 
 		this.parseDic();
-		
 		ipcRenderer.send('refresh-need-dic-win');
 	},
 	parseDic: function(){
 		
-        globalDatas.dicKeyMap = {};
-        globalDatas.dicData.dics.forEach(function(item){
-            globalDatas.dicKeyMap[item.key] = item.value;
-        })
+        ipcRenderer.sendSync('parseDic');
 
     },
     parseCmd: function(){
 
-        globalDatas.cmdKeyMap = {};
-        globalDatas.cmdData.cmds.forEach(function(item){
-            globalDatas.cmdKeyMap[item.key] = item.code;
-        })
+        ipcRenderer.sendSync('parseCmd');
 
     },
 	msgTip:function(title,err){
