@@ -119,6 +119,14 @@ function initEvt() {
         var url = $(this).closest('.value').data('value');
         shell.openExternal(url);
     })
+    //帮助
+    $('body').on('click', '.help', function() {
+       var index = layer.open({
+            title: '帮助',
+            content: '<font style="color:#0c9d72">{</font>键<font style="color:#0c9d72">}</font>可以引用其他字典',
+            btn: ['确定'],
+        });
+    })
 }
 
 function initData() {

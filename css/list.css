@@ -87,9 +87,19 @@ td.dir{
 td.code,td.code div{
 	word-break:break-all;
 }
+td.code{
+	color: #fff;
+}
 .layui-layer{
 	z-index: 100 !important;
 }
 .layui-layer-shade{
 	z-index: 99 !important;
+}
+.help{
+	float: right;
+	margin-right: 15px;
+    margin-top: 14px;
+    color: #0c9d72;
+    cursor: pointer;
 }

@@ -83,7 +83,7 @@ function initEvt() {
         oldCmd.code = $(this).closest('tr').find('.code').html();
         layer.open({
             title: '修改命令',
-            area: ['750px'],
+            area: ['750px','90%'],
             content: $('#addTpl').html(),
             btn: ['保存', '取消'],
             yes: function(index, layero) {
@@ -130,6 +130,27 @@ function initEvt() {
         } else {
             $('.all_cb').attr('checked', false);
         }
+    })
+    //api
+    $('body').on('click', '.help', function() {
+       var index = layer.open({
+            title: 'api',
+            area:['80%', '100%'],
+            content: $('#apiTmp').html(),
+            btn: ['确定'],
+        });
+        //代码高亮
+        var highlight = ace.require("ace/ext/static_highlight")
+        var dom = ace.require("ace/lib/dom")
+        $('.api').each(function(index, dom) {
+            highlight(dom, {
+                mode: 'ace/mode/javascript',
+                theme: 'ace/theme/clouds',
+                // startLineNumber: 1,
+                // showGutter: true,
+                trim: true
+            });
+        });
     })
 }
 //设置自定义代码提示

@@ -46,6 +46,7 @@
             <div class="crumbs">
 				<i class="crumbs-arrow"></i>
 				<a href="javascript:;" class="crumbs-label">命令列表</a>
+				<i class="iconfont help">&#xe625;</i>
 			</div>
         </div>
 
@@ -129,6 +130,83 @@
 				<input type="button" class="modify" value="修改">
 			</td>
 		</tr>
+	</script>
+	<script type="text/template" id="apiTmp">
+		<table class="grid">
+			<thead>
+				<tr>
+					<th >接口列表</th>
+				</tr>
+			</thead>
+			<tbody id="cmdList">
+				<tr>
+					<td class="api">
+/**
+ * TODO 根据cmdKey引入代码
+ * @cmdKey  {String: 命令字典key}
+ * @return {void}
+ */
+exec(cmdKey)
+					</td>
+				</tr>
+				<tr>
+					<td class="api">
+/**
+ * TODO 执行子进程
+ * @cmd  {String: 命令行}
+ * @arg  {Array: 参数列表}
+ * @cwd  {String: 运行目录}
+ * @flag  {Boolean: 是否打开命令窗口}
+ * @return {void}
+ */
+exec(cmd,arg,cwd,flag)
+					</td>
+				</tr>
+				<tr>
+					<td class="api">
+/**
+ * TODO 新建文件
+ * @path  {String: 文件路径}
+ * @content  {String: 文件内容,如果第二个参数是一个文件路径，将用该文件作为内容}
+ * @callback  {Function:成功回调函数}
+ * @return {void}
+ */
+createFile(path,content|path,callback)
+					</td>
+				</tr>
+				<tr>
+					<td class="api">
+/**
+ * TODO 新建文件夹
+ * @path  {String: 文件夹路径}
+ * @callback  {Function: 成功回调函数}
+ * @return {void}
+ */
+mkdirs(path,callback)
+					</td>
+				</tr>
+				<tr>
+					<td class="api">
+/**
+ * TODO 获取字典值
+ * @dicKey  {String: 字典键,可通过task关进在来获取当前任务的值,task.dir->目录名，task.wiki->wiki,task.title->标题} 
+ * @return {String: 字典值}
+ */
+getValue(dicKey)
+					</td>
+				</tr>
+				<tr>
+					<td class="api">
+/**
+ * TODO 弹框
+ * @title  {String: 弹框标题}
+ * @return {String:	弹框内容}
+ */
+msgTip(title,content)
+					</td>
+				</tr>
+			</tbody>
+		</table>
 	</script>
     <script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/lib/layer/layer.js"></script>

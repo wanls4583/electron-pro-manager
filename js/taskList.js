@@ -154,6 +154,14 @@ function initEvt() {
         var url = $(this).closest('.wiki').data('wiki');
         shell.openExternal(url);
     })
+    //帮助
+    $('body').on('click', '.help', function() {
+       var index = layer.open({
+            title: '帮助',
+            content: '可用\"<font style="color:#0c9d72">|</font>\"分割版本，第一个为样式版本，第二个为js版本',
+            btn: ['确定'],
+        });
+    })
 }
 //解析命令
 function parseCode(cmdkey) {
