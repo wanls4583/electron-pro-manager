@@ -58,3 +58,16 @@ global.datas.configFilePath = "data/config.txt";
 global.datas.taskFilePath = "data/task.txt";
 global.datas.dicFilePath = "data/dic.txt";
 global.datas.cmdFilePath = 'data/cmd.txt';
+
+ipcMain.on('spawn', function(event, arg) {
+  mainWindow.webContents.send('do-spawn', arg);
+  // event.sender.send('do-spawn', arg);
+});
+
+ipcMain.on('refresh-need-cmd-win', function(event, arg) {
+  mainWindow.webContents.send('do-refresh-need-cmd-win', arg);
+});
+
+ipcMain.on('refresh-need-dic-win', function(event, arg) {
+  mainWindow.webContents.send('do-refresh-need-dic-win', arg);
+});

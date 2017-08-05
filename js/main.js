@@ -2,18 +2,21 @@ var remote = require('electron').remote;
 var Menu = remote.Menu;
 var MenuItem = remote.MenuItem;
 var globalDatas = remote.getGlobal('datas');
+var ipcRenderer = require('electron').ipcRenderer;
+var child_process = require('child_process');
+
 var mainPlatform = {
     menus: [],
-    process:{},
 	init: function(){
 
         var self = this;
         var userName = $('.pf-user-name').text();
         globalDatas['userName'] = userName;
         globalDatas['openedWin'] = {};
+        globalDatas['process'] = {};
         this.loadDicFile(function(err,data){
             data && data.length>4 && (globalDatas.dicDatas = JSON.parse(data)) && (globalDatas.dicData = globalDatas.dicDatas[userName]);
-            self.parseDic();
+            Util.parseDic();
             loadDone();
         });
         this.loadTaskFile(function(err,data){
@@ -22,17 +25,34 @@ var mainPlatform = {
         });
         this.loadCmdFile(function(err,data){
             data && data.length>4 && (globalDatas.cmdDatas = JSON.parse(data)) && (globalDatas.cmdData = globalDatas.cmdDatas[userName]);
-            self.parseCmd();
+            Util.parseCmd();
             loadDone();
         });
         function loadDone(){
             if(globalDatas.dicDatas && globalDatas.taskDatas && globalDatas.cmdDatas){
                 self.bindEvent();
                 self.render(menu['home']);
+                self.initIpc();
             }
         }
 
 	},
+    initIpc: function(){
+        var self = this;
+        ipcRenderer.on('do-spawn', function(event, arg) {
+            self.spawn.apply(self,arg);
+        });
+        ipcRenderer.on('do-refresh-need-cmd-win', function(event, arg) {
+            $('.need_cmd').each(function(index,item){
+                item.contentWindow.location.reload(true);
+            })
+        });
+        ipcRenderer.on('do-refresh-need-dic-win', function(event, arg) {
+            $('.need_dic').each(function(index,item){
+                item.contentWindow.location.reload(true);
+            })
+        });
+    },
     loadTaskFile : function(callback1,callback2){
         Util.loadFile(globalDatas.taskFilePath,callback1,callback2);
     },
@@ -44,22 +64,6 @@ var mainPlatform = {
     },
     loadCmdFile: function(callback1,callback2){
         Util.loadFile(globalDatas.cmdFilePath,callback1,callback2);
-    },
-    parseDic: function(){
-
-        globalDatas.dicKeyMap = {};
-        globalDatas.dicData.dics.forEach(function(item){
-            globalDatas.dicKeyMap[item.key] = item.value;
-        })
-
-    },
-    parseCmd: function(){
-
-        globalDatas.cmdKeyMap = {};
-        globalDatas.cmdData.cmds.forEach(function(item){
-            globalDatas.cmdKeyMap[item.key] = item.code;
-        })
-
     },
 	bindEvent: function(){
         var menuName = $('.pf-nav').find('.current').data('menu');
@@ -110,7 +114,7 @@ var mainPlatform = {
             	}else{
                     var dicClass = $(this).data('dicclass') || '';
                     var cmdClass = $(this).data('cmdclass') || '';
-            		var html = '<iframe class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto"></iframe>'
+            		var html = '<iframe  class="current_win '+dicClass+' '+cmdClass+'" src="'+src+'" frameborder="no"   border="no" height="100%" width="100%" scrolling="auto" nodeintegration></iframe>'
             		$('#pf-page').append(html);
             		$(this).data('src','open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount);
             		globalDatas.openedWin['open_iframe_'+menuName+'_'+self.menus[menuName].iframeCount] = $('.current_win');
@@ -190,7 +194,7 @@ var mainPlatform = {
         $(document).on('click','.add_cmd',function(){
 
             var menu = {
-                cwd: dicKeyMap['rootDir']?dicKeyMap['rootDir']:process.cwd(),
+                cwd: globalDatas.dicKeyMap['rootDir']?globalDatas.dicKeyMap['rootDir']:process.cwd(),
                 title: '',
                 icon: 'imgs/main/l03.png',
                 href: 'open_cmd',
@@ -234,13 +238,170 @@ var mainPlatform = {
         $('.current_menu').find('.sider-nav').find('li.current').trigger('click');
         this.menus[menuName].iframeCount++;
 	},
-
 	addMenu: function(menu){
 		var html = '<li data-cwd="'+(menu.cwd||'')+'" data-src="'+ menu.href +'" title="'+ menu.title +'"><a href="javascript:;"><img src="'+ menu.icon +'"><span class="sider-nav-title">'+ menu.title +'</span><i class="iconfont">&#xe611;</i></a></li>'
 		$('.current_menu').find('.sider-nav').append(html);
 		$('.current_menu').find('.sider-nav').find('li').last().trigger('click');
-	}
+	},
+    spawn : function(cmd,arg,cwd,$dom){
+        console.log('spawn:',cmd,arg,cwd)
+        var self = this;
+        var resultCwd = '';
+        
+        if($dom===true){
+            var menu = {
+                cwd: cwd||process.cwd(),
+                title: '',
+                icon: 'imgs/main/l03.png',
+                href: 'open_cmd',
+                isCurrent: true
+            }
+            self.addMenu(menu);
+            $dom = $('.current_win').find('.out');
+            cwd = menu.cwd;
+        }
+        cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
+        if(cwd && !fs.existsSync(cwd)){
+            throw new Error('运行目录'+cwd+'不存在');
+        }
+        
+        // 切换目录命令特殊处理
+        if(cmd=='cd'){
+            resultCwd = this.parsePathForWin32(cwd,arg[0]);
+            if(resultCwd){
+                $('.current_menu').find('.current').data('cwd',resultCwd);
+                $dom.closest('.opened_cmd').data('cwd',resultCwd);
+            }
+            
+        }else if(cmd=='cd.'||cmd=='cd..'){
+            resultCwd = this.parsePathForWin32(cwd,cmd.substr(2));
+            if(resultCwd){
+                $('.current_menu').find('.current').data('cwd',resultCwd);
+                $dom.closest('.opened_cmd').data('cwd',resultCwd);
+            }
+        }else if(cmd=='debug'){
+            remote.getCurrentWindow().toggleDevTools();
+        }else if(cmd=='exit'){
+            var title = $('.current_win',parent.document).attr('title');
+            this.exec('taskkill /F /T /pid '+globalDatas.process[title]);
+            return;
+        }
 
+        
+        var $openedCmd = null;
+        var workerProcess = null;
+
+        if($dom){
+            var msg = '<span>'+cwd + '> '+'</span>'+cmd;
+            $openedCmd = $dom.closest('.opened_cmd');
+            arg ? (msg = msg+' '+arg.join(' ')+'<br/>'):(msg = msg+'<br/>');
+            $dom.append(Util.replaceReturn(msg));
+            if(fs.existsSync(resultCwd)){
+                resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ') && removeChoke();
+            }
+            $openedCmd.find('.wrap')[0].scrollIntoView(true);
+            addChoke();
+        }
+
+        if(cmd==='cd'||cmd==='cd.'||cmd==='cd..'||cmd=='debug'){
+            removeChoke();
+            return;
+        }
+        //去除双引号和单引号，使用nodejs子进程不会有空格目录的情况
+        for(var i=0 ;arg && i<arg.length; i++){
+            arg[i] = arg[i].replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
+        }
+
+        workerProcess = child_process.spawn(cmd,arg||[],(cwd&&{cwd:cwd})||{});
+
+        globalDatas.process[$('.current_win').attr('title')] = workerProcess.pid;
+
+        workerProcess.on('error',function(err){
+
+            var msg = '命令'+cmd+'执行失败';
+            if($dom){
+                msg = msg+'<br/>';
+                $dom.append(Util.replaceReturn(msg));
+                $openedCmd.find('.wrap')[0].scrollIntoView(true);
+                removeChoke();
+            }
+        })
+
+        workerProcess.stdout.on('data',function (data) {
+            var bufferHelper = new BufferHelper();
+            var msg = iconv.decode(bufferHelper.concat(data).toBuffer(),'gbk');
+            console.log(cmd+' stdout: ' +msg);
+            if($dom){
+                msg = msg+'<br/>';
+                $dom.append(Util.replaceReturn(msg));
+                $openedCmd.find('.wrap')[0].scrollIntoView(true);
+                addChoke();
+            }
+        });
+        workerProcess.stdout.on('end',function(){
+            if($dom){
+                removeChoke();
+            }
+        })
+        workerProcess.stderr.on('data', function (data) {
+            var bufferHelper = new BufferHelper();
+            var msg = iconv.decode(bufferHelper.concat(data).toBuffer(),'gbk');
+            console.log(cmd+' stderr: ' +msg);
+            if($dom){
+                msg = cwd+'> '+msg+'<br/>';
+                $dom.append(Util.replaceReturn(msg));
+                $dom.closest('.opened_cmd').find('input')[0].scrollIntoView(true);
+                removeChoke();
+            }
+        });
+        workerProcess.on('close', function (code) {
+            console.log('spawn子进程'+cmd+'程已退出，退出码 '+code);
+        });
+        workerProcess.on('exit', function (code) {
+            console.log('spawn子进程'+cmd+'结束，结束码:'+code);
+        });
+        function addChoke(){
+            $openedCmd.find('.wrap').addClass('choke');
+            $openedCmd.find('.wrap').find('input').css('padding-left','0px');
+        }
+        function removeChoke(){
+            $openedCmd.find('.wrap').removeClass('choke');
+            $openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+5+'px');
+        }
+        return workerProcess;
+    },
+    exec: function(cmd,$dom,cwd){
+
+        var workerProcess = child_process.exec(cmd,(cwd&&{cwd:cwd})||{},function(error, stdout, stderr){
+            if (error) {
+                appendMsg(cmd+'命令执行失败');
+                return;
+            }
+            if(stdout){
+                appendMsg(stdout);
+            }
+            if(stderr){
+                appendMsg(stderr);
+            }
+            console.log(cmd+' stdout:',stdout);
+            console.log(cmd+' stderr:',stderr);
+            function appendMsg(msg){
+                if($dom){
+                    var $openedCmd = $dom.closest('.opened_cmd');
+                    msg = msg+'<br/>';
+                    $dom.append(Util.replaceReturn(msg));
+                    $openedCmd.find('.wrap')[0].scrollIntoView(true);
+                }
+            }
+        });
+        workerProcess.on('close', function (code) {
+          console.log('exec子进程'+cmd+'程已退出，退出码 '+code);
+        });
+        workerProcess.on('exit', function (code) {
+          console.log('exec子进程'+cmd+'结束，结束码:'+code);
+        });
+        return workerProcess;
+    },
 };
 
 mainPlatform.init();

@@ -1,22 +1,4 @@
-layer && layer.config({
-    extend: ['skin/osa/style.css'], //加载新皮肤
-    skin: 'layer-ext-osa' //一旦设定，所有弹层风格都采用此主题。
-});
-Array.prototype.indexOf = function(val) {
-	for (var i = 0; i < this.length; i++) {
-		if (this[i] == val) return i;
-	}
-	return -1;
-};
-Array.prototype.remove = function(val) {
-	var index = this.indexOf(val);
-	if (index > -1) {
-		this.splice(index, 1);
-	}
-};
-
 var require = require||window.parent.require;
-var child_process = require('child_process');
 var iconv = require('iconv-lite');
 var BufferHelper = require('bufferhelper');
 var remote = require('electron').remote
@@ -25,17 +7,34 @@ var path = require("path");
 var shell = require('electron').shell; 
 var fs = require('fs');
 var globalDatas = remote.getGlobal('datas');
-
+var ipcRenderer = require('electron').ipcRenderer;
 var Util = {
+	init: function(){
+		//初始化弹框皮肤
+		layer && layer.config({
+		    extend: ['skin/osa/style.css'], //加载新皮肤
+		    skin: 'layer-ext-osa' //一旦设定，所有弹层风格都采用此主题。
+		});
+		//初始化数组函数
+		Array.prototype.indexOf = function(val) {
+			for (var i = 0; i < this.length; i++) {
+				if (this[i] == val) return i;
+			}
+			return -1;
+		};
+		Array.prototype.remove = function(val) {
+			var index = this.indexOf(val);
+			if (index > -1) {
+				this.splice(index, 1);
+			}
+		};
+		this.initApi();
+	},
 	//初始化对外接口
-	init:function(){
+	initApi:function(){
 		var self = this;
-		window.exec = function(cmdKey){
-			// var code = self.importCode(cmdKey);
-			// if(code && arguments.length==1){
-			// 	eval(code);
-			// }else
-				self.spawn.apply(self,arguments);
+		window.exec = function(){
+			self.spawn.apply(self,arguments);
 		}
 		window.createFile = function(){
 			self.createFile.apply(self,arguments);
@@ -54,172 +53,7 @@ var Util = {
 		return str.replace(/\r\n|\r|\n/g,'<br/>')
 	},
 	spawn : function(cmd,arg,cwd,$dom){
-		console.log('spawn:',cmd,arg,cwd)
-		var self = this;
-		var resultCwd = '';
-		
-		if($dom===true){
-			var menu = {
-                cwd: cwd||window.process&&process.cwd()||parent.process&&parent.process.cwd(),
-                title: '',
-                icon: 'imgs/main/l03.png',
-                href: 'open_cmd',
-                isCurrent: true
-            }
-            // if(fs.existsSync(cmd)){
-            // 	menu.cwd = cmd;
-            // }else{
-            // 	var index = cmd.lastIndexOf('\\');
-            // 	index = index > cmd.lastIndexOf('/') ? index : cmd.lastIndexOf('/');
-            // 	if(index>0 && fs.existsSync(cmd.substring(0,index))){
-            // 		menu.cwd = cmd.substring(0,index);
-            // 	}
-            // }
-			window.mainPlatform && mainPlatform.addMenu(menu) || parent.mainPlatform && parent.mainPlatform.addMenu(menu);
-			$dom = $('.current_win',parent.document).find('.out');
-			cwd = menu.cwd;
-		}
-		cwd = cwd && cwd.replace(/\\/g,'/').replace(/[\/]+$/,'');
-		if(cwd && !fs.existsSync(cwd)){
-	    	throw new Error('运行目录'+cwd+'不存在');
-		}
-		
-		// 切换目录命令特殊处理
-		if(cmd=='cd'){
-			resultCwd = this.parsePathForWin32(cwd,arg[0]);
-			if(resultCwd){
-				$('.current_menu').find('.current').data('cwd',resultCwd);
-				$dom.closest('.opened_cmd').data('cwd',resultCwd);
-			}
-			
-		}else if(cmd=='cd.'||cmd=='cd..'){
-			resultCwd = this.parsePathForWin32(cwd,cmd.substr(2));
-			if(resultCwd){
-				$('.current_menu').find('.current').data('cwd',resultCwd);
-				$dom.closest('.opened_cmd').data('cwd',resultCwd);
-			}
-		}else if(cmd=='debug'){
-			remote.getCurrentWindow().toggleDevTools();
-		}else if(cmd=='exit'){
-			var title = $('.current_win',parent.document).attr('title');
-			this.exec('taskkill /F /T /pid '+parent.mainPlatform.process[title].pid);
-			return;
-		}
-
-		
-		var $openedCmd = null;
-		var workerProcess = null;
-
-		if($dom){
-			var msg = '<span>'+cwd + '> '+'</span>'+cmd;
-			$openedCmd = $dom.closest('.opened_cmd');
-			arg ? (msg = msg+' '+arg.join(' ')+'<br/>'):(msg = msg+'<br/>');
-			$dom.append(self.replaceReturn(msg));
-			if(fs.existsSync(resultCwd)){
-				resultCwd && $openedCmd.find('.wrap').find('span').html(resultCwd+'> ') && removeChoke();
-			}
-			$openedCmd.find('.wrap')[0].scrollIntoView(true);
-			addChoke();
-		}
-
-		if(cmd==='cd'||cmd==='cd.'||cmd==='cd..'||cmd=='debug'){
-			removeChoke();
-			return;
-		}
-		//去除双引号和单引号，使用nodejs子进程不会有空格目录的情况
-		for(var i=0 ;arg && i<arg.length; i++){
-			arg[i] = arg[i].replace(/"([\s\S]*?)"/g,'$1').replace(/'([\s\S]*?)'/g,'$1');
-		}
-
-		workerProcess = child_process.spawn(cmd,arg||[],(cwd&&{cwd:cwd})||{});
-
-		parent.mainPlatform.process[$('.current_win',parent.document).attr('title')] = workerProcess;
-
-		workerProcess.on('error',function(){
-
-			var msg = '命令'+cmd+'执行失败';
-			if($dom){
-				msg = msg+'<br/>';
-				$dom.append(self.replaceReturn(msg));
-				$openedCmd.find('.wrap')[0].scrollIntoView(true);
-				removeChoke();
-			}
-		})
-
-		workerProcess.stdout.on('data',function (data) {
-			var bufferHelper = new BufferHelper();
-			var msg = iconv.decode(bufferHelper.concat(data).toBuffer(),'gbk');
-			console.log(cmd+' stdout: ' +msg);
-			if($dom){
-				msg = msg+'<br/>';
-				$dom.append(self.replaceReturn(msg));
-				$openedCmd.find('.wrap')[0].scrollIntoView(true);
-				addChoke();
-			}
-		});
-		workerProcess.stdout.on('end',function(){
-			if($dom){
-				removeChoke();
-			}
-		})
-		workerProcess.stderr.on('data', function (data) {
-			var bufferHelper = new BufferHelper();
-			var msg = iconv.decode(bufferHelper.concat(data).toBuffer(),'gbk');
-			console.log(cmd+' stderr: ' +msg);
-			if($dom){
-				msg = cwd+'> '+msg+'<br/>';
-				$dom.append(self.replaceReturn(msg));
-				$dom.closest('.opened_cmd').find('input')[0].scrollIntoView(true);
-				removeChoke();
-			}
-		});
-		workerProcess.on('close', function (code) {
-		    console.log('spawn子进程'+cmd+'程已退出，退出码 '+code);
-		});
-		workerProcess.on('exit', function (code) {
-		    console.log('spawn子进程'+cmd+'结束，结束码:'+code);
-		});
-		function addChoke(){
-			$openedCmd.find('.wrap').addClass('choke');
-			$openedCmd.find('.wrap').find('input').css('padding-left','0px');
-		}
-		function removeChoke(){
-			$openedCmd.find('.wrap').removeClass('choke');
-			$openedCmd.find('.wrap').find('input').css('padding-left',$openedCmd.find('.wrap').find('span').width()+5+'px');
-		}
-		return workerProcess;
-	},
-	exec: function(cmd,$dom,cwd){
-		var self = this;
-		var workerProcess = child_process.exec(cmd,(cwd&&{cwd:cwd})||{},function(error, stdout, stderr){
-			if (error) {
-				appendMsg(cmd+'命令执行失败');
-				return;
-			}
-			if(stdout){
-				appendMsg(stdout);
-			}
-			if(stderr){
-				appendMsg(stderr);
-			}
-			console.log(cmd+' stdout:',stdout);
-			console.log(cmd+' stderr:',stderr);
-			function appendMsg(msg){
-				if($dom){
-					var $openedCmd = $dom.closest('.opened_cmd');
-					msg = msg+'<br/>';
-					$dom.append(self.replaceReturn(msg));
-					$openedCmd.find('.wrap')[0].scrollIntoView(true);
-				}
-			}
-		});
-		workerProcess.on('close', function (code) {
-		  console.log('exec子进程'+cmd+'程已退出，退出码 '+code);
-		});
-		workerProcess.on('exit', function (code) {
-		  console.log('exec子进程'+cmd+'结束，结束码:'+code);
-		});
-		return workerProcess;
+		ipcRenderer.send('spawn',[cmd,arg,cwd,$dom]);
 	},
 	parsePathForWin32: function(cwd,arg){
 		var resultCwd = '';
@@ -264,7 +98,7 @@ var Util = {
 				writeContnet(content);
 			});
 		}else{
-			writeContnet(content);
+			// writeContnet(content);
 		}
 
 		function writeContnet(content){
@@ -389,16 +223,33 @@ var Util = {
 		this.writeFile(globalDatas.cmdFilePath,data,callback);
 	},
 	refreshNeedCmdWin: function(){
-		$('.need_cmd',parent.document).each(function(index,item){
-			item.contentWindow.location.reload(true);
-		})
 		
+		this.parseCmd();
+		
+		ipcRenderer.send('refresh-need-cmd-win');
 	},
 	refreshNeedDicWin: function(){
-		$('.need_dic',parent.document).each(function(index,item){
-			item.contentWindow.location.reload(true);
-		})
+
+		this.parseDic();
+		
+		ipcRenderer.send('refresh-need-dic-win');
 	},
+	parseDic: function(){
+		
+        globalDatas.dicKeyMap = {};
+        globalDatas.dicData.dics.forEach(function(item){
+            globalDatas.dicKeyMap[item.key] = item.value;
+        })
+
+    },
+    parseCmd: function(){
+
+        globalDatas.cmdKeyMap = {};
+        globalDatas.cmdData.cmds.forEach(function(item){
+            globalDatas.cmdKeyMap[item.key] = item.code;
+        })
+
+    },
 	msgTip:function(title,err){
 		layer.open({
     		title: title,
@@ -407,33 +258,21 @@ var Util = {
     	});
 	},
 	getValue: function(key){
-		for(key1 in globalDatas.dicKeyMap){
-			if(globalDatas.dicKeyMap[key].indexOf('{'+key1+'}')!=-1 && globalDatas.dicKeyMap[key1].indexOf('{'+key+'}')==-1){
-				globalDatas.dicKeyMap[key] = globalDatas.dicKeyMap[key].replace('{'+key1+'}',globalDatas.dicKeyMap[key1]);
-			}
-		}
 		var value = '';
 		var matche = key.match(/task\.([\s\S]+)/);
 		if(matche){
 			value = globalDatas.currentTask[matche[1]];
 		}else if(globalDatas.dicKeyMap[key]){
+			for(key1 in globalDatas.dicKeyMap){
+				if(globalDatas.dicKeyMap[key].indexOf('{'+key1+'}')!=-1 && globalDatas.dicKeyMap[key1].indexOf('{'+key+'}')==-1){
+					globalDatas.dicKeyMap[key] = globalDatas.dicKeyMap[key].replace('{'+key1+'}',globalDatas.dicKeyMap[key1]);
+				}
+			}
 			value = globalDatas.dicKeyMap[key];
 		}else{
 			throw new Error('字典:'+key+' 不存在');
 		}
 		return value;
-	},
-	// importCode: function(key){
-	// 	if(!this.cmdKeyMap){
-	// 		this.cmdKeyMap = {};
-	// 		parent.mainPlatform.cmdData.cmds.forEach(function(item){
-	// 			this.cmdKeyMap[item.key] = item.code;
-	// 		})
-	// 	}
-	// 	if(!this.cmdKeyMap[key]){
-	// 		return false;
-	// 	}
-	// 	return this.cmdKeyMap[key].replace(/\\/g,'\\\\');
-	// }
+	}
 }
 Util.init();
