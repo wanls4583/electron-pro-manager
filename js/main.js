@@ -43,12 +43,12 @@ var mainPlatform = {
         });
         ipcRenderer.on('do-refresh-need-cmd-win', function(event, arg) {
             $('.need_cmd').each(function(index,item){
-                item.contentWindow.location.reload(true);
+                item.reload(true);
             })
         });
         ipcRenderer.on('do-refresh-need-dic-win', function(event, arg) {
             $('.need_dic').each(function(index,item){
-                item.contentWindow.location.reload(true);
+                item.reload(true);
             })
         });
     },
