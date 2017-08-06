@@ -9,26 +9,35 @@ var mainPlatform = {
     init: function() {
         var self = this;
         var userName = $('.pf-user-name').text();
+        var loadCount = 0;
         globalDatas['userName'] = userName;
         globalDatas['openedWin'] = {};
         globalDatas['process'] = {};
         this.loadDicFile(function(err, data) {
             data && data.length > 4 && (globalDatas.dicDatas = JSON.parse(data)) && (globalDatas.dicData = globalDatas.dicDatas[userName]);
             Util.parseDic();
+            loadCount++;
             loadDone();
-        });
+        }, loadFile);
         this.loadTaskFile(function(err, data) {
             data && data.length > 4 && (globalDatas.taskDatas = JSON.parse(data)) && (globalDatas.taskData = globalDatas.taskDatas[userName]);
+            loadCount++;
             loadDone();
-        });
+        }, loadFile);
         this.loadCmdFile(function(err, data) {
             data && data.length > 4 && (globalDatas.cmdDatas = JSON.parse(data)) && (globalDatas.cmdData = globalDatas.cmdDatas[userName]);
             Util.parseCmd();
+            loadCount++;
             loadDone();
-        });
+        }, loadFile);
+
+        function loadFile() {
+            loadCount++;
+            loadDone();
+        }
 
         function loadDone() {
-            if (globalDatas.dicDatas && globalDatas.taskDatas && globalDatas.cmdDatas) {
+            if (loadCount == 3) {
                 self.bindEvent();
                 self.render(menu['home']);
                 self.initIpc();

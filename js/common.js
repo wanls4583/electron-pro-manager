@@ -3,7 +3,7 @@ var iconv = require('iconv-lite');
 var BufferHelper = require('bufferhelper');
 var remote = require('electron').remote
 var dialog = remote.dialog;
-var path = require("path");
+var Path = require("path");
 var shell = require('electron').shell;
 var fs = require('fs');
 var globalDatas = remote.getGlobal('datas');
@@ -58,9 +58,9 @@ var Util = {
     //创建文件
     createFile: function(filePath, content, fn) {
         var This = this;
-        var exists = fs.existsSync(path.dirname(filePath));
+        var exists = fs.existsSync(Path.dirname(filePath));
         if (!exists) {
-            This.mkdirs(path.dirname(filePath), function() {
+            This.mkdirs(Path.dirname(filePath), function() {
                 writeContnet(content);
             });
         } else {
@@ -104,7 +104,7 @@ var Util = {
         var This = this;
         fs.exists(dirname, function(exists) {
             if (!exists) {
-                This.mkdirs(path.dirname(dirname), function() {
+                This.mkdirs(Path.dirname(dirname), function() {
                     fs.mkdir(dirname, function() {
                         console.log('mk dir', dirname);
                         typeof callback === 'function' && callback();
@@ -171,9 +171,20 @@ var Util = {
         })
     },
     writeFile: function(path, data, callback) {
-        fs.writeFile(path, data, function(err) {
-            typeof callback === 'function' && callback(err);
-        });
+        var exists = fs.existsSync(Path.dirname(path));
+        if (!exists) {
+            this.mkdirs(Path.dirname(path), function() {
+                writeFile();
+            });
+        } else {
+            writeFile();
+        }
+
+        function writeFile() {
+            fs.writeFile(path, data, function(err) {
+                typeof callback === 'function' && callback(err);
+            });
+        }
     },
     writeDicFile: function(data, callback) {
         this.writeFile(globalDatas.dicFilePath, data, callback);

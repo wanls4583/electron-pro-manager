@@ -4,10 +4,9 @@ var shell = require('electron').shell;
 var remote = require('electron').remote;
 var globalDatas = remote.getGlobal('datas');
 var userName = globalDatas.userName;
-var datas = globalDatas.cmdDatas;
+var datas = globalDatas.cmdDatas || {};
 var cmdData = globalDatas.cmdData;
 var editor = null;
-
 initData();
 initEvt();
 
@@ -83,7 +82,7 @@ function initEvt() {
         oldCmd.code = $(this).closest('tr').find('.code').html();
         layer.open({
             title: '修改命令',
-            area: ['750px','90%'],
+            area: ['750px', '90%'],
             content: $('#addTpl').html(),
             btn: ['保存', '取消'],
             yes: function(index, layero) {
@@ -114,7 +113,6 @@ function initEvt() {
             enableLiveAutocompletion: true
         });
     })
-
     //全选
     $('body').on('click', '.all_cb', function() {
         if ($('.all_cb').attr('checked')) {
@@ -133,9 +131,9 @@ function initEvt() {
     })
     //api
     $('body').on('click', '.help', function() {
-       var index = layer.open({
+        var index = layer.open({
             title: 'api',
-            area:['80%', '100%'],
+            area: ['80%', '100%'],
             content: $('#apiTmp').html(),
             btn: ['确定'],
         });
@@ -168,7 +166,7 @@ function initEvt() {
 // }
 function initData() {
     var html = $('#cmdItem').html();
-    var cmds = cmdData.cmds;
+    var cmds = cmdData && cmdData.cmds || [];
     $('#cmdList').html('');
     for (var j = 0; j < cmds.length; j++) {
         var item = '';
@@ -193,7 +191,6 @@ function initData() {
     })
     checkBoxReset();
 }
-
 //checkbox检测
 function checkBoxReset() {
     if ($('.item_cb').length == $('.item_cb:checked').length) {
@@ -212,7 +209,7 @@ function getAddData() {
     cmd.title = $('.in_title').val() || '';
     cmd.key = $('.in_key').val() || '';
     cmd.code = editor.getValue() || ''
-    if (cmdData != null) {
+    if (cmdData) {
         var cmds = cmdData.cmds;
         for (var j = 0; j < cmds.length; j++) {
             if (cmds[j].key == cmd.key) {
@@ -229,6 +226,9 @@ function getAddData() {
         datas[userName] = {};
         datas[userName].userName = userName;
         datas[userName].cmds = [cmd];
+        cmdData = datas[userName];
+        globalDatas.cmdDatas = datas;
+        globalDatas.cmdData = cmdData;
     }
     return datas;
 }

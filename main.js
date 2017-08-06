@@ -6,6 +6,7 @@ const BrowserWindow = electron.BrowserWindow
 const path = require('path')
 const url = require('url')
 const { ipcMain } = electron
+const fs = require('fs');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
@@ -44,9 +45,16 @@ app.on('activate', function() {
 })
 //全局数据
 global.datas = {}
-global.datas.taskFilePath = "resources/app/data/task.txt";
-global.datas.dicFilePath = "resources/app/data/dic.txt";
-global.datas.cmdFilePath = 'resources/app/data/cmd.txt';
+var exists = fs.existsSync('data');
+if(exists){
+    global.datas.taskFilePath = "data/task.txt";
+    global.datas.dicFilePath = "data/dic.txt";
+    global.datas.cmdFilePath = 'data/cmd.txt';
+}else{
+    global.datas.taskFilePath = "resources/app/data/task.txt";
+    global.datas.dicFilePath = "resources/app/data/dic.txt";
+    global.datas.cmdFilePath = 'resources/app/data/cmd.txt';
+}
 ipcMain.on('spawn', function(event, arg) {
     mainWindow.webContents.send('do-spawn', arg);
     // event.sender.send('do-spawn', arg);

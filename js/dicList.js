@@ -4,9 +4,8 @@ var shell = require('electron').shell;
 var remote = require('electron').remote;
 var globalDatas = remote.getGlobal('datas');
 var userName = globalDatas.userName;
-var datas = globalDatas.dicDatas;
+var datas = globalDatas.dicDatas || {};
 var dicData = globalDatas.dicData;
-
 initData();
 initEvt();
 
@@ -71,7 +70,6 @@ function initEvt() {
         oldDic.key = $(this).closest('tr').find('.key').data('key');
         oldDic.title = $(this).closest('tr').find('.title').data('title');
         oldDic.value = $(this).closest('tr').find('.value').data('value');
-
         layer.open({
             title: '修改任务',
             area: ['750px'],
@@ -97,7 +95,6 @@ function initEvt() {
         $('.in_key').val(oldDic.key);
         $('.in_value').val(oldDic.value);
     })
-
     //全选
     $('body').on('click', '.all_cb', function() {
         if ($('.all_cb').attr('checked')) {
@@ -121,7 +118,7 @@ function initEvt() {
     })
     //帮助
     $('body').on('click', '.help', function() {
-       var index = layer.open({
+        var index = layer.open({
             title: '帮助',
             content: '<font style="color:#0c9d72">{</font>键<font style="color:#0c9d72">}</font>可以引用其他字典',
             btn: ['确定'],
@@ -131,7 +128,7 @@ function initEvt() {
 
 function initData() {
     var html = $('#dicItem').html();
-    var dics = dicData.dics;
+    var dics = dicData && dicData.dics || [];
     $('#dicList').html('');
     for (var j = 0; j < dics.length; j++) {
         var item = '';
@@ -143,7 +140,6 @@ function initData() {
     }
     checkBoxReset();
 }
-
 //checkbox检测
 function checkBoxReset() {
     if ($('.item_cb').length == $('.item_cb:checked').length) {
@@ -162,7 +158,7 @@ function getAddData() {
     dic.title = $('.in_title').val() || '';
     dic.key = $('.in_key').val() || '';
     dic.value = $('.in_value').val() || ''
-    if (dicData != null) {
+    if (dicData) {
         var dics = dicData.dics;
         for (var j = 0; j < dics.length; j++) {
             if (dics[j].key == dic.key) {
@@ -179,6 +175,9 @@ function getAddData() {
         datas[userName] = {};
         datas[userName].userName = userName;
         datas[userName].dics = [dic];
+        dicData = datas[userName];
+        globalDatas.dicDatas = datas;
+        globalDatas.dicData = dicData;
     }
     return datas;
 }
