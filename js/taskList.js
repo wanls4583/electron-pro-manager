@@ -11,6 +11,7 @@ initData();
 initEvt();
 
 function initEvt() {
+    var layerIndex = null;
     //添加任务
     $('body').on('click', '.add', function() {
         layer.open({
@@ -105,7 +106,7 @@ function initEvt() {
             });
             return;
         }
-        layer.open({
+        layerIndex = layer.open({
             title: '命令',
             area: ['500px'],
             content: html,
@@ -123,7 +124,7 @@ function initEvt() {
                 var code = parseCode(key)
                 try {
                     eval(code);
-                    layer.close(layer.open())
+                    layer.close(layerIndex);
                 } catch (e) {
                     layer.open({
                         title: '错误',
