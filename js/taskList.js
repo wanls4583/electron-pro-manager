@@ -96,9 +96,11 @@ function initEvt() {
         var html = '';
         for (var i = 0; cmdData && i < cmdData.cmds.length; i++) {
             cmdItem = cmdData.cmds[i];
+            if(cmdItem.key.substr(0,1)=='_')
+                continue;
             html += '<div data-key="' + cmdItem.key + '" class="cmd button"><i class="iconfont">&#xe628;</i><span class="button-label">' + cmdItem.title + '</span></div>'
         }
-        if (!cmdData || cmdData.cmds.length == 0) {
+        if (!html) {
             layer.open({
                 title: '命令',
                 content: '没有命令',
